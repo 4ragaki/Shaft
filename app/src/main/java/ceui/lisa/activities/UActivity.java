@@ -1,33 +1,23 @@
 package ceui.lisa.activities;
 
 import android.content.Intent;
-import android.text.TextUtils;
-import android.view.LayoutInflater;
+import android.os.Bundle;
 import android.view.View;
-import android.widget.CompoundButton;
-import android.widget.TextView;
+import android.view.ViewTreeObserver;
+import android.view.animation.AlphaAnimation;
+import android.view.animation.Animation;
 
-import androidx.fragment.app.FragmentActivity;
-import androidx.fragment.app.FragmentManager;
-import androidx.fragment.app.FragmentTransaction;
 import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
-import androidx.lifecycle.ViewModelProviders;
 
 import com.bumptech.glide.Glide;
-import com.zhy.view.flowlayout.FlowLayout;
-import com.zhy.view.flowlayout.TagAdapter;
-import com.zhy.view.flowlayout.TagFlowLayout;
-
-import java.util.ArrayList;
-import java.util.List;
+import com.github.ybq.android.spinkit.style.Wave;
+import com.google.android.material.appbar.AppBarLayout;
 
 import ceui.lisa.R;
-import ceui.lisa.databinding.ActicityUserBinding;
-import ceui.lisa.fragments.FragmentLikeIllust;
-import ceui.lisa.fragments.FragmentLikeIllustHorizontal;
-import ceui.lisa.fragments.FragmentLikeNovelHorizontal;
-import ceui.lisa.http.ErrorCtrl;
+import ceui.lisa.databinding.ActivityNewUserBinding;
+import ceui.lisa.fragments.FragmentHolder;
+import ceui.lisa.http.NullCtrl;
 import ceui.lisa.http.Retro;
 import ceui.lisa.interfaces.Display;
 import ceui.lisa.models.UserDetailResponse;
@@ -39,30 +29,54 @@ import ceui.lisa.viewmodel.UserViewModel;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.schedulers.Schedulers;
 
-import static ceui.lisa.activities.Shaft.sUserModel;
-import static com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions.withCrossFade;
+public class UActivity extends BaseActivity<ActivityNewUserBinding> implements Display<UserDetailResponse> {
 
-/**
- * 用户详情页面
- */
-public class UActivity extends BaseActivity<ActicityUserBinding> implements Display<UserDetailResponse> {
-
+    private int userID;
     private UserViewModel mUserViewModel;
 
     @Override
     protected int initLayout() {
-        return R.layout.acticity_user;
+        return R.layout.activity_new_user;
     }
 
     @Override
     protected void initView() {
-        baseBind.toolbar.setNavigationOnClickListener(view -> finish());
-        baseBind.send.hide();
+        Wave wave = new Wave();
+        baseBind.progress.setIndeterminateDrawable(wave);
+        baseBind.toolbar.setPadding(0, Shaft.statusHeight, 0, 0);
+        baseBind.toolbar.setNavigationOnClickListener(v -> finish());
+        baseBind.toolbarLayout.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+            @Override
+            public void onGlobalLayout() {
+                final int offset = baseBind.toolbarLayout.getHeight() - Shaft.statusHeight - Shaft.toolbarHeight;
+                baseBind.appBar.addOnOffsetChangedListener(new AppBarLayout.OnOffsetChangedListener() {
+                    @Override
+                    public void onOffsetChanged(AppBarLayout appBarLayout, int verticalOffset) {
+                        if (Math.abs(verticalOffset) < 15) {
+                            baseBind.centerHeader.setAlpha(1.0f);
+                            baseBind.toolbarTitle.setAlpha(0.0f);
+                        } else if ((offset - Math.abs(verticalOffset)) < 15) {
+                            baseBind.centerHeader.setAlpha(0.0f);
+                            baseBind.toolbarTitle.setAlpha(1.0f);
+                        } else {
+                            baseBind.centerHeader.setAlpha(1 + (float) verticalOffset / offset);
+                            baseBind.toolbarTitle.setAlpha(-(float) verticalOffset / offset);
+                        }
+                        Common.showLog(className + verticalOffset);
+                    }
+                });
+                baseBind.toolbarLayout.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+            }
+        });
     }
 
     @Override
-    protected void initData() {
-        int userID = getIntent().getIntExtra(Params.USER_ID, 0);
+    protected void initBundle(Bundle bundle) {
+        userID = bundle.getInt(Params.USER_ID);
+    }
+
+    @Override
+    public void initModel() {
         mUserViewModel = new ViewModelProvider(this).get(UserViewModel.class);
         mUserViewModel.getUser().observe(this, new Observer<UserDetailResponse>() {
             @Override
@@ -70,21 +84,26 @@ public class UActivity extends BaseActivity<ActicityUserBinding> implements Disp
                 invoke(userDetailResponse);
             }
         });
-        Retro.getAppApi().getUserDetail(sUserModel.getResponse().getAccess_token(), userID)
+    }
+
+    @Override
+    protected void initData() {
+        baseBind.progress.setVisibility(View.VISIBLE);
+        Retro.getAppApi().getUserDetail(Shaft.sUserModel.getResponse().getAccess_token(), userID)
                 .subscribeOn(Schedulers.newThread())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new ErrorCtrl<UserDetailResponse>() {
+                .subscribe(new NullCtrl<UserDetailResponse>() {
                     @Override
-                    public void onNext(UserDetailResponse user) {
+                    public void success(UserDetailResponse user) {
                         mUserViewModel.getUser().setValue(user);
                     }
+
+                    @Override
+                    public void must(boolean isSuccess) {
+                        super.must(isSuccess);
+                        baseBind.progress.setVisibility(View.INVISIBLE);
+                    }
                 });
-        baseBind.turnGray.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                gray(isChecked);
-            }
-        });
     }
 
     @Override
@@ -93,160 +112,84 @@ public class UActivity extends BaseActivity<ActicityUserBinding> implements Disp
     }
 
     @Override
-    public void invoke(UserDetailResponse currentUser) {
-        Glide.with(mContext).load(GlideUtil.getMediumImg(currentUser
-                .getUser().getProfile_image_urls().getMaxImage()))
-                .placeholder(R.color.light_bg).into(baseBind.userHead);
-        baseBind.userHead.setOnClickListener(new View.OnClickListener() {
+    public void invoke(UserDetailResponse data) {
+        getSupportFragmentManager()
+                .beginTransaction()
+                .replace(R.id.fragment_container, FragmentHolder.newInstance())
+                .commitNow();
+
+        if (userID == Shaft.sUserModel.getUserId()) {
+            baseBind.starUser.setVisibility(View.INVISIBLE);
+        } else {
+            baseBind.starUser.setVisibility(View.VISIBLE);
+            if (data.getUser().isIs_followed()) {
+                baseBind.starUser.setText(R.string.string_177);
+            } else {
+                baseBind.starUser.setText(R.string.string_178);
+            }
+            baseBind.starUser.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    if (data.getUser().isIs_followed()) {
+                        baseBind.starUser.setText(R.string.string_178);
+                        PixivOperate.postUnFollowUser(data.getUser().getId());
+                        data.getUser().setIs_followed(false);
+                    } else {
+                        baseBind.starUser.setText(R.string.string_177);
+                        PixivOperate.postFollowUser(data.getUser().getId(), Params.TYPE_PUBLUC);
+                        data.getUser().setIs_followed(true);
+                    }
+                }
+            });
+            baseBind.starUser.setOnLongClickListener(v1 -> {
+                if (!data.getUser().isIs_followed()) {
+                    baseBind.starUser.setText(R.string.string_177);
+                    data.getUser().setIs_followed(true);
+                    PixivOperate.postFollowUser(data.getUser().getId(), Params.TYPE_PRIVATE);
+                    return true;
+                } else {
+                    return false;
+                }
+            });
+        }
+
+        baseBind.centerHeader.setVisibility(View.VISIBLE);
+        Animation animation = new AlphaAnimation(0.0f, 1.0f);
+        animation.setDuration(800L);
+        baseBind.centerHeader.startAnimation(animation);
+        if (data.getUser().isIs_premium()) {
+            baseBind.vipImage.setVisibility(View.VISIBLE);
+        } else {
+            baseBind.vipImage.setVisibility(View.GONE);
+        }
+        Glide.with(mContext).load(GlideUtil.getHead(data.getUser())).into(baseBind.userHead);
+        baseBind.userName.setText(data.getUser().getName());
+        baseBind.follow.setText(String.valueOf(data.getProfile().getTotal_follow_users()));
+        baseBind.pFriend.setText(String.valueOf(data.getProfile().getTotal_mypixiv_users()));
+
+        View.OnClickListener pFriend = new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent(mContext, TemplateActivity.class);
-                intent.putExtra(Params.URL, currentUser.getUser().getProfile_image_urls().getMaxImage());
-                intent.putExtra(TemplateActivity.EXTRA_FRAGMENT, "图片详情");
-                mContext.startActivity(intent);
+                intent.putExtra(Params.USER_ID, data.getUser().getId());
+                intent.putExtra(TemplateActivity.EXTRA_FRAGMENT, "好P友");
+                startActivity(intent);
             }
-        });
-        baseBind.userName.setText(currentUser.getUser().getName());
-        baseBind.userAddress.setText(Common.checkEmpty(currentUser.getProfile().getRegion()));
-        baseBind.userAddress.setVisibility(View.VISIBLE);
-        List<String> tagList = new ArrayList<>();
-        tagList.add("好P友: " + currentUser.getProfile().getTotal_mypixiv_users());
-        tagList.add("关注: " + currentUser.getProfile().getTotal_follow_users());
-        tagList.add("详细信息");
-        baseBind.tagType.setAdapter(new TagAdapter<String>(tagList) {
+        };
+        baseBind.pFriend.setOnClickListener(pFriend);
+        baseBind.pFriendS.setOnClickListener(pFriend);
+
+        View.OnClickListener follow = new View.OnClickListener() {
             @Override
-            public View getView(FlowLayout parent, int position, String s) {
-                TextView tv = (TextView) LayoutInflater.from(mContext).inflate(R.layout.recy_single_tag_text,
-                        parent, false);
-                tv.setText(s);
-                return tv;
+            public void onClick(View v) {
+                Intent intent = new Intent(mContext, TemplateActivity.class);
+                intent.putExtra(Params.USER_ID, data.getUser().getId());
+                intent.putExtra(TemplateActivity.EXTRA_FRAGMENT, "正在关注");
+                startActivity(intent);
             }
-        });
-        baseBind.tagType.setOnTagClickListener(new TagFlowLayout.OnTagClickListener() {
-            @Override
-            public boolean onTagClick(View view, int position, FlowLayout parent) {
-                if (position == 0) {
-                    Intent intent = new Intent(mContext, TemplateActivity.class);
-                    intent.putExtra(Params.USER_ID, currentUser.getUser().getId());
-                    intent.putExtra(TemplateActivity.EXTRA_FRAGMENT, "好P友");
-                    startActivity(intent);
-                } else if (position == 1) {
-                    Intent intent = new Intent(mContext, TemplateActivity.class);
-                    intent.putExtra(Params.USER_ID, currentUser.getUser().getId());
-                    intent.putExtra(TemplateActivity.EXTRA_FRAGMENT, "正在关注");
-                    startActivity(intent);
-                } else if (position == 2) {
-                    Intent intent = new Intent(mContext, TemplateActivity.class);
-                    intent.putExtra(TemplateActivity.EXTRA_FRAGMENT, "详细信息");
-                    intent.putExtra(Params.CONTENT, currentUser);
-                    startActivity(intent);
-                }
-                return false;
-            }
-        });
+        };
+        baseBind.follow.setOnClickListener(follow);
+        baseBind.followS.setOnClickListener(follow);
 
-
-        FragmentManager fragmentManager = getSupportFragmentManager();
-        FragmentTransaction transaction = fragmentManager.beginTransaction();
-
-        if (currentUser.getUser().getId() != sUserModel.getResponse().getUser().getId()) {
-            //如果看的是自己的主页，先展示收藏
-            //如果看的是别人的主页，先展示作品
-            if (currentUser.getProfile().getTotal_illusts() > 0) {
-                transaction.replace(R.id.container1, FragmentLikeIllustHorizontal.
-                        newInstance(currentUser, 2));// 1插画收藏    2插画作品     3漫画作品
-            }
-
-            if (currentUser.getProfile().getTotal_manga() > 0) {
-                transaction.replace(R.id.container2, FragmentLikeIllustHorizontal.
-                        newInstance(currentUser, 3));// 1插画收藏    2插画作品     3漫画作品
-            }
-
-            if (currentUser.getProfile().getTotal_illust_bookmarks_public() > 0) {
-                transaction.replace(R.id.container3, FragmentLikeIllustHorizontal.
-                        newInstance(currentUser, 1));// 1插画收藏    2插画作品     3漫画作品
-            }
-
-            if (currentUser.getUser().isIs_followed()) {
-                baseBind.send.setImageResource(R.drawable.ic_favorite_accent_24dp);
-            } else {
-                baseBind.send.setImageResource(R.drawable.ic_favorite_black_24dp);
-            }
-
-            baseBind.send.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    if (currentUser.getUser().isIs_followed()) {
-                        baseBind.send.setImageResource(R.drawable.ic_favorite_black_24dp);
-                        currentUser.getUser().setIs_followed(false);
-                        PixivOperate.postUnFollowUser(currentUser.getUser().getId());
-                    } else {
-                        baseBind.send.setImageResource(R.drawable.ic_favorite_accent_24dp);
-                        currentUser.getUser().setIs_followed(true);
-                        PixivOperate.postFollowUser(currentUser.getUser().getId(),
-                                FragmentLikeIllust.TYPE_PUBLUC);
-                    }
-                }
-            });
-            baseBind.send.setOnLongClickListener(new View.OnLongClickListener() {
-                @Override
-                public boolean onLongClick(View view) {
-                    if (!currentUser.getUser().isIs_followed()) {
-                        baseBind.send.setImageResource(R.drawable.ic_favorite_accent_24dp);
-                        currentUser.getUser().setIs_followed(true);
-                        PixivOperate.postFollowUser(currentUser.getUser().getId(),
-                                FragmentLikeIllust.TYPE_PRIVATE);
-                    }
-                    return true;
-                }
-            });
-            baseBind.send.show();
-        } else {
-            //如果看的是自己的主页，先展示收藏
-            //如果看的是别人的主页，先展示作品
-            if (currentUser.getProfile().getTotal_illust_bookmarks_public() > 0) {
-                transaction.replace(R.id.container1,
-                        FragmentLikeIllustHorizontal.newInstance(currentUser, 1));// 1插画收藏    2插画作品     3漫画作品
-            }
-
-            if (currentUser.getProfile().getTotal_illusts() > 0) {
-                transaction.replace(R.id.container2,
-                        FragmentLikeIllustHorizontal.newInstance(currentUser, 2));// 1插画收藏    2插画作品     3漫画作品
-            }
-
-            if (currentUser.getProfile().getTotal_manga() > 0) {
-                transaction.replace(R.id.container3,
-                        FragmentLikeIllustHorizontal.newInstance(currentUser, 3));// 1插画收藏    2插画作品     3漫画作品
-            }
-        }
-
-        if (currentUser.getProfile().getTotal_novels() > 0) {
-            transaction.replace(R.id.container4,
-                    FragmentLikeNovelHorizontal.newInstance(1, currentUser.getUserId(),
-                            currentUser.getProfile().getTotal_novels()));// 0收藏的小说， 1创作的小说
-        }
-
-        transaction.replace(R.id.container5,
-                FragmentLikeNovelHorizontal.newInstance(0, currentUser.getUserId(),
-                        currentUser.getProfile().getTotal_novels()));// 0收藏的小说， 1创作的小说
-
-        transaction.commit();
-
-        if (!TextUtils.isEmpty(currentUser.getWorkspace().getWorkspace_image_url())) {
-            Glide.with(mContext)
-                    .load(GlideUtil.getMediumImg(currentUser.getWorkspace().getWorkspace_image_url()))
-                    .transition(withCrossFade())
-                    .into(baseBind.userBackground);
-
-            baseBind.userBackground.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    Intent intent = new Intent(mContext, TemplateActivity.class);
-                    intent.putExtra(Params.URL, currentUser.getWorkspace().getWorkspace_image_url());
-                    intent.putExtra(TemplateActivity.EXTRA_FRAGMENT, "图片详情");
-                    mContext.startActivity(intent);
-                }
-            });
-        }
     }
 }

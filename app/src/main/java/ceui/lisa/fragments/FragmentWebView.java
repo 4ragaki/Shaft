@@ -16,12 +16,10 @@ import com.google.android.material.snackbar.Snackbar;
 import com.just.agentweb.AgentWeb;
 import com.just.agentweb.WebViewClient;
 
-import java.util.Objects;
-
 import ceui.lisa.R;
-import ceui.lisa.activities.UActivity;
+import ceui.lisa.activities.OutWakeActivity;
+import ceui.lisa.activities.UserActivity;
 import ceui.lisa.databinding.FragmentWebviewBinding;
-import ceui.lisa.download.WebDownload;
 import ceui.lisa.utils.ClipBoardUtils;
 import ceui.lisa.utils.Common;
 import ceui.lisa.utils.Params;
@@ -35,16 +33,29 @@ public class FragmentWebView extends BaseFragment<FragmentWebviewBinding> {
     //private static final String ILLUST_HEAD = "https://www.pixiv.net/member_illust.php?mode=medium&illust_id=";
     private static final String USER_HEAD = "https://www.pixiv.net/member.php?id=";
     private static final String WORKS_HEAD = "https://www.pixiv.net/artworks/";
+    private static final String PIXIV_HEAD = "https://www.pixiv.net/";
     private String title;
     private String url;
     private String response = null;
     private String mime = null;
     private String encoding = null;
     private String historyUrl = null;
+    private boolean preferPreserve = false;
     private AgentWeb mAgentWeb;
     private WebView mWebView;
     private String mIntentUrl;
     private WebViewClickHandler handler = new WebViewClickHandler();
+
+    @Override
+    public void initBundle(Bundle bundle) {
+        title = bundle.getString(Params.TITLE);
+        url = bundle.getString(Params.URL);
+        response = bundle.getString(Params.RESPONSE);
+        mime = bundle.getString(Params.MIME);
+        encoding = bundle.getString(Params.ENCODING);
+        historyUrl = bundle.getString(Params.HISTORY_URL);
+        preferPreserve = bundle.getBoolean(Params.PREFER_PRESERVE);
+    }
 
     public static FragmentWebView newInstance(String title, String url) {
         Bundle args = new Bundle();
@@ -55,14 +66,14 @@ public class FragmentWebView extends BaseFragment<FragmentWebviewBinding> {
         return fragment;
     }
 
-    @Override
-    public void initBundle(Bundle bundle) {
-        title = bundle.getString(Params.TITLE);
-        url = bundle.getString(Params.URL);
-        response = bundle.getString(Params.RESPONSE);
-        mime = bundle.getString(Params.MIME);
-        encoding = bundle.getString(Params.ENCODING);
-        historyUrl = bundle.getString(Params.HISTORY_URL);
+    public static FragmentWebView newInstance(String title, String url, boolean preferPreserve) {
+        Bundle args = new Bundle();
+        args.putString(Params.TITLE, title);
+        args.putString(Params.URL, url);
+        args.putBoolean(Params.PREFER_PRESERVE, preferPreserve);
+        FragmentWebView fragment = new FragmentWebView();
+        fragment.setArguments(args);
+        return fragment;
     }
 
     public static FragmentWebView newInstance(String title, String url, String response,
@@ -85,13 +96,13 @@ public class FragmentWebView extends BaseFragment<FragmentWebviewBinding> {
     }
 
     @Override
-    public void initView(View view) {
-        baseBind.toolbar.setTitle(title);
+    public void initView() {
+        baseBind.toolbarTitle.setText(title);
         baseBind.toolbar.setNavigationOnClickListener(v -> mActivity.finish());
     }
 
     @Override
-    void initData() {
+    protected void initData() {
         AgentWeb.PreAgentWeb ready = AgentWeb.with(this)
                 .setAgentWebParent(baseBind.webViewParent, new RelativeLayout.LayoutParams(-1, -1))
                 .useDefaultIndicator()
@@ -100,19 +111,19 @@ public class FragmentWebView extends BaseFragment<FragmentWebviewBinding> {
                     public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
 
                         String destiny = request.getUrl().toString();
-                        Common.showLog(className + destiny);
-                        if (destiny.contains(WORKS_HEAD)) {
-                            Common.showLog("点击了ILLUST， 拦截调回APP");
-                            PixivOperate.getIllustByID(sUserModel,
-                                    Integer.valueOf(destiny.substring(WORKS_HEAD.length())), mContext);
-                            return true;
-                        }
-
-                        if (destiny.contains(USER_HEAD)) {
-                            Common.showLog("点击了USER， 拦截调回APP");
-                            Intent intent = new Intent(mContext, UActivity.class);
-                            intent.putExtra(Params.USER_ID, Integer.valueOf(destiny.substring(USER_HEAD.length())));
-                            startActivity(intent);
+                        Common.showLog(className + "destiny " + destiny);
+                        if (destiny.contains(PIXIV_HEAD)) {
+                            try {
+                                Intent intent = new Intent(mContext, OutWakeActivity.class);
+                                intent.setData(Uri.parse(destiny));
+                                startActivity(intent);
+                                if (!preferPreserve) {
+                                    finish();
+                                }
+                            } catch (Exception e) {
+                                Common.showToast(e.toString());
+                                e.printStackTrace();
+                            }
                             return true;
                         }
 
@@ -159,7 +170,7 @@ public class FragmentWebView extends BaseFragment<FragmentWebviewBinding> {
     public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
         WebView.HitTestResult result = mWebView.getHitTestResult();
         mIntentUrl = result.getExtra();
-        menu.setHeaderView(new ContextMenuTitleView(mContext, mIntentUrl));
+        menu.setHeaderView(new ContextMenuTitleView(mContext, mIntentUrl, Common.resolveThemeAttribute(mContext, R.attr.colorPrimary)));
 
         if (result.getType() == WebView.HitTestResult.SRC_ANCHOR_TYPE) {
             mIntentUrl = result.getExtra();
@@ -218,15 +229,11 @@ public class FragmentWebView extends BaseFragment<FragmentWebviewBinding> {
                 }
                 case COPY_LINK_ADDRESS: {
                     ClipBoardUtils.putTextIntoClipboard(mContext, mIntentUrl);
-                    Snackbar.make(parentView, R.string.copy_to_clipboard, Snackbar.LENGTH_SHORT).show();
+                    Snackbar.make(rootView, R.string.copy_to_clipboard, Snackbar.LENGTH_SHORT).show();
                     break;
                 }
                 case COPY_LINK_TEXT: {
                     Common.showToast("不会");
-                    break;
-                }
-                case DOWNLOAD_LINK: {
-                    WebDownload.download(mIntentUrl);
                     break;
                 }
                 case SEARCH_GOOGLE: {

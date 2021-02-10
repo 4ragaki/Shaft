@@ -13,6 +13,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import java.util.List;
 
 import ceui.lisa.interfaces.OnItemClickListener;
+import ceui.lisa.models.Starable;
 import ceui.lisa.utils.Common;
 
 public abstract class BaseAdapter<Item, BindView extends ViewDataBinding> extends
@@ -37,7 +38,7 @@ public abstract class BaseAdapter<Item, BindView extends ViewDataBinding> extend
         int viewType = getItemViewType(position);
         if (viewType == ITEM_NORMAL) {
             int index = position - headerSize();
-            bindData(allIllust.get(index), (ViewHolder<BindView>) holder, index);
+            tryCatchBindData(allIllust.get(index), (ViewHolder<BindView>) holder, index);
         } else if (viewType == ITEM_HEAD) {
 
         }
@@ -52,9 +53,17 @@ public abstract class BaseAdapter<Item, BindView extends ViewDataBinding> extend
 
     public abstract void bindData(Item target, ViewHolder<BindView> bindView, int position);
 
+    private void tryCatchBindData(Item target, ViewHolder<BindView> bindView, int position){
+        try {
+            bindData(target, bindView, position);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     @NonNull
     @Override
-    public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+    public ViewHolder<? extends ViewDataBinding> onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         if (viewType == ITEM_NORMAL) {
             return getNormalItem(parent);
         } else {
@@ -68,7 +77,7 @@ public abstract class BaseAdapter<Item, BindView extends ViewDataBinding> extend
     }
 
     public void clear() {
-        int size = allIllust.size();
+        final int size = allIllust.size();
         allIllust.clear();
         notifyItemRangeRemoved(0, size);
     }
@@ -85,7 +94,7 @@ public abstract class BaseAdapter<Item, BindView extends ViewDataBinding> extend
         return 0;
     }
 
-    public ViewHolder getHeader(ViewGroup parent) {
+    public ViewHolder<? extends ViewDataBinding> getHeader(ViewGroup parent) {
         return null;
     }
 
@@ -98,5 +107,37 @@ public abstract class BaseAdapter<Item, BindView extends ViewDataBinding> extend
                         false
                 )
         );
+    }
+
+    public Item getItemAt(int index) {
+        if (index < allIllust.size()) {
+            return allIllust.get(index);
+        }
+        return null;
+    }
+
+    public void setLiked(int id, boolean isLike) {
+        if (id == 0) {
+            return;
+        }
+
+        if (allIllust == null || allIllust.size() == 0) {
+            return;
+        }
+
+        for (int i = 0; i < allIllust.size(); i++) {
+            if (allIllust.get(i) instanceof Starable) {
+                if (((Starable) allIllust.get(i)).getItemID() == id) {
+                    //设置这个作品为已收藏状态
+                    ((Starable) allIllust.get(i)).setItemStared(isLike);
+                    if (headerSize() != 0) {//如果有header
+                        notifyItemChanged(i + headerSize());
+                    } else { //没有header
+                        notifyItemChanged(i);
+                    }
+                    break;
+                }
+            }
+        }
     }
 }

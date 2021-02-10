@@ -2,22 +2,31 @@ package ceui.lisa.fragments;
 
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.os.Build;
 import android.text.TextUtils;
+import android.text.method.HideReturnsTransformationMethod;
+import android.text.method.PasswordTransformationMethod;
+import android.util.Base64;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
-import android.widget.LinearLayout;
+import android.widget.CompoundButton;
 import android.widget.Toast;
 
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.widget.Toolbar;
 
+import com.blankj.utilcode.util.EncodeUtils;
+import com.blankj.utilcode.util.EncryptUtils;
 import com.facebook.rebound.SimpleSpringListener;
 import com.facebook.rebound.Spring;
 import com.facebook.rebound.SpringConfig;
 import com.facebook.rebound.SpringSystem;
 
+import java.io.UnsupportedEncodingException;
+import java.security.SecureRandom;
 import java.util.Locale;
 
 import ceui.lisa.R;
@@ -27,12 +36,13 @@ import ceui.lisa.activities.TemplateActivity;
 import ceui.lisa.database.AppDatabase;
 import ceui.lisa.database.UserEntity;
 import ceui.lisa.databinding.ActivityLoginBinding;
-import ceui.lisa.http.ErrorCtrl;
+import ceui.lisa.feature.HostManager;
+import ceui.lisa.feature.PkceUtil;
 import ceui.lisa.http.NullCtrl;
 import ceui.lisa.http.Retro;
-import ceui.lisa.model.ExportUser;
 import ceui.lisa.models.SignResponse;
 import ceui.lisa.models.UserModel;
+import ceui.lisa.utils.Base64Util;
 import ceui.lisa.utils.ClipBoardUtils;
 import ceui.lisa.utils.Common;
 import ceui.lisa.utils.Dev;
@@ -41,12 +51,22 @@ import ceui.lisa.utils.Params;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.schedulers.Schedulers;
 
+import static android.util.Base64.NO_PADDING;
+import static android.util.Base64.NO_WRAP;
+import static android.util.Base64.URL_SAFE;
+
 public class FragmentLogin extends BaseFragment<ActivityLoginBinding> {
+
+    public static final String IOS_CLIENT_ID = "KzEZED7aC0vird8jWyHM38mXjNTY";
+    public static final String IOS_CLIENT_SECRET = "W9JZoJe00qPvJsiyCGT3CCtC6ZUtdpKpzMbNlUGP";
 
     public static final String CLIENT_ID = "MOBrBDS8blbauoSck0ZfDbtuzpyT";
     public static final String CLIENT_SECRET = "lsACyCD94FhDUtGTXi3QzcFE2uU1hqtDaKeqrdwj";
     public static final String DEVICE_TOKEN = "pixiv";
     public static final String TYPE_PASSWORD = "password";
+    public static final String REFRESH_TOKEN = "refresh_token";
+    public static final String AUTH_CODE = "authorization_code";
+    public static final String CALL_BACK = "https://app-api.pixiv.net/web/v1/users/auth/pixiv/callback";
     private static final String SIGN_TOKEN = "Bearer l-f9qZ0ZyqSwRyZs8-MymbtWBbSxmCu1pmbOlyisou8";
     private static final String SIGN_REF = "pixiv_android_app_provisional_account";
     private static final int TAPS_TO_BE_A_DEVELOPER = 7;
@@ -67,7 +87,7 @@ public class FragmentLogin extends BaseFragment<ActivityLoginBinding> {
     }
 
     @Override
-    public void initView(View view) {
+    public void initView() {
         baseBind.toolbar.setPadding(0, Shaft.statusHeight, 0, 0);
         baseBind.toolbar.inflateMenu(R.menu.login_menu);
         baseBind.toolbar.setOnMenuItemClickListener(new Toolbar.OnMenuItemClickListener() {
@@ -83,8 +103,17 @@ public class FragmentLogin extends BaseFragment<ActivityLoginBinding> {
                     if (userJson != null
                             && !TextUtils.isEmpty(userJson)
                             && userJson.contains(Params.USER_KEY)) {
-                        Common.showToast("导入成功", baseBind.toolbar);
+                        Common.showToast("导入成功", 2);
                         UserModel exportUser = Shaft.sGson.fromJson(userJson, UserModel.class);
+
+                        String pwd = exportUser.getResponse().getUser().getPassword();
+                        //如果是新版本加密过的,解密一下
+                        if (!TextUtils.isEmpty(pwd) && pwd.startsWith(Params.SECRET_PWD_KEY)) {
+                            String secret = pwd.substring(Params.SECRET_PWD_KEY.length());
+                            String realPwd = Base64Util.decode(secret);
+                            Common.showLog(className + "real password: " + realPwd);
+                            exportUser.getResponse().getUser().setPassword(realPwd);
+                        }
                         Local.saveUser(exportUser);
                         Dev.refreshUser = true;
                         Shaft.sUserModel = exportUser;
@@ -92,7 +121,7 @@ public class FragmentLogin extends BaseFragment<ActivityLoginBinding> {
                         MainActivity.newInstance(intent, mContext);
                         mActivity.finish();
                     } else {
-                        Common.showToast("剪贴板无用户信息", baseBind.toolbar, 3);
+                        Common.showToast("剪贴板无用户信息", 3);
                     }
                     return true;
                 }
@@ -129,18 +158,28 @@ public class FragmentLogin extends BaseFragment<ActivityLoginBinding> {
             baseBind.password.setText(Dev.USER_PWD);
             baseBind.password.setSelection(Dev.USER_PWD.length());
         }
+        baseBind.showPwd.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if (isChecked) {
+                    baseBind.password.setTransformationMethod(HideReturnsTransformationMethod.getInstance());
+                } else {
+                    baseBind.password.setTransformationMethod(PasswordTransformationMethod.getInstance());
+                }
+                baseBind.password.setSelection(baseBind.password.getText().toString().length());
+            }
+        });
         baseBind.login.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (baseBind.userName.getText().toString().length() != 0) {
-                    if (baseBind.password.getText().toString().length() != 0) {
-                        login(baseBind.userName.getText().toString(), baseBind.password.getText().toString());
-                    } else {
-                        Common.showToast("请输入密码", baseBind.login, 3);
-                    }
-                } else {
-                    Common.showToast("请输入用户名", baseBind.login, 3);
-                }
+                Intent intent = new Intent(mContext, TemplateActivity.class);
+                intent.putExtra(TemplateActivity.EXTRA_FRAGMENT, "网页链接");
+                intent.putExtra(Params.URL, "https://app-api.pixiv.net/web/v1/login?code_challenge=" +
+                                HostManager.get().getPkceItem().getChallenge() +
+                        "&code_challenge_method=S256&client=pixiv-ios");
+                intent.putExtra(Params.TITLE, getString(R.string.now_login));
+                intent.putExtra(Params.PREFER_PRESERVE, true);
+                startActivity(intent);
             }
         });
         baseBind.sign.setOnClickListener(new View.OnClickListener() {
@@ -149,7 +188,7 @@ public class FragmentLogin extends BaseFragment<ActivityLoginBinding> {
                 if (baseBind.signUserName.getText().toString().length() != 0) {
                     sign();
                 } else {
-                    Common.showToast("请输入用户名", baseBind.sign, 3);
+                    Common.showToast("请输入用户名", 3);
                 }
             }
         });
@@ -168,7 +207,7 @@ public class FragmentLogin extends BaseFragment<ActivityLoginBinding> {
     }
 
     private void setTitle() {
-        if (Local.getBoolean(Params.USE_DEBUG, false)) {
+        if (Shaft.getMMKV().decodeBool(Params.USE_DEBUG, false)) {
             baseBind.title.setText("Shaft(测试版)");
             baseBind.userName.setText(Dev.USER_ACCOUNT);
             baseBind.password.setText(Dev.USER_PWD);
@@ -185,10 +224,10 @@ public class FragmentLogin extends BaseFragment<ActivityLoginBinding> {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 if (which == 0) {
-                    Local.setBoolean(Params.USE_DEBUG, false);
+                    Shaft.getMMKV().encode(Params.USE_DEBUG, false);
                     Dev.isDev = false;
                 } else if (which == 1) {
-                    Local.setBoolean(Params.USE_DEBUG, true);
+                    Shaft.getMMKV().encode(Params.USE_DEBUG, true);
                     Dev.isDev = true;
                 }
                 mHitCountDown = TAPS_TO_BE_A_DEVELOPER;
@@ -200,8 +239,8 @@ public class FragmentLogin extends BaseFragment<ActivityLoginBinding> {
     }
 
     @Override
-    void initData() {
-        if (Local.getBoolean(Params.SHOW_DIALOG, true)) {
+    protected void initData() {
+        if (Shaft.getMMKV().decodeBool(Params.SHOW_DIALOG, true)) {
             Common.createDialog(mContext);
         }
         rotate = springSystem.createSpring();
@@ -266,20 +305,18 @@ public class FragmentLogin extends BaseFragment<ActivityLoginBinding> {
         Retro.getSignApi().pixivSign(SIGN_TOKEN, baseBind.signUserName.getText().toString(), SIGN_REF)
                 .subscribeOn(Schedulers.newThread())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new ErrorCtrl<SignResponse>() {
+                .subscribe(new NullCtrl<SignResponse>() {
                     @Override
-                    public void onNext(SignResponse signResponse) {
-                        if (signResponse != null) {
-                            if (signResponse.isError()) {
-                                if (!TextUtils.isEmpty(signResponse.getMessage())) {
-                                    Common.showToast(signResponse.getMessage());
-                                } else {
-                                    Common.showToast("未知错误");
-                                }
-                                baseBind.progress.setVisibility(View.INVISIBLE);
+                    public void success(SignResponse signResponse) {
+                        if (signResponse.isError()) {
+                            if (!TextUtils.isEmpty(signResponse.getMessage())) {
+                                Common.showToast(signResponse.getMessage());
                             } else {
-                                login(signResponse.getBody().getUser_account(), signResponse.getBody().getPassword());
+                                Common.showToast("未知错误");
                             }
+                            baseBind.progress.setVisibility(View.INVISIBLE);
+                        } else {
+                            login(signResponse.getBody().getUser_account(), signResponse.getBody().getPassword());
                         }
                     }
                 });
@@ -292,9 +329,9 @@ public class FragmentLogin extends BaseFragment<ActivityLoginBinding> {
                 CLIENT_ID,
                 CLIENT_SECRET,
                 DEVICE_TOKEN,
-                true,
+                Boolean.TRUE,
                 TYPE_PASSWORD,
-                true,
+                Boolean.TRUE,
                 pwd,
                 username).subscribeOn(Schedulers.newThread())
                 .observeOn(AndroidSchedulers.mainThread())
@@ -304,15 +341,20 @@ public class FragmentLogin extends BaseFragment<ActivityLoginBinding> {
                         userModel.getResponse().getUser().setPassword(pwd);
                         userModel.getResponse().getUser().setIs_login(true);
                         Local.saveUser(userModel);
+
+
                         UserEntity userEntity = new UserEntity();
                         userEntity.setLoginTime(System.currentTimeMillis());
                         userEntity.setUserID(userModel.getResponse().getUser().getId());
-                        userEntity.setUserGson(Shaft.sGson.toJson(userModel));
+                        userEntity.setUserGson(Shaft.sGson.toJson(Local.getUser()));
+
+
+
                         AppDatabase.getAppDatabase(mContext).downloadDao().insertUser(userEntity);
                         baseBind.progress.setVisibility(View.INVISIBLE);
                         if (isAdded()) {
                             Intent intent = new Intent(mContext, MainActivity.class);
-                            requireActivity().startActivity(intent);
+                            mActivity.startActivity(intent);
                             mActivity.finish();
                         }
                     }

@@ -6,17 +6,15 @@ import android.content.Context;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.widget.Button;
+import android.view.ViewGroup;
+import android.view.Window;
+import android.view.WindowManager;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AlertDialog;
 import androidx.databinding.DataBindingUtil;
 import androidx.databinding.ViewDataBinding;
 import androidx.fragment.app.DialogFragment;
-
-import ceui.lisa.models.UserModel;
-import ceui.lisa.utils.Local;
 
 public abstract class BaseDialog<Layout extends ViewDataBinding> extends DialogFragment {
 
@@ -25,7 +23,6 @@ public abstract class BaseDialog<Layout extends ViewDataBinding> extends DialogF
     protected Layout baseBind;
     protected int mLayoutID = -1;
     protected View parentView;
-    protected Button sure, cancel;
     protected String className = this.getClass().getSimpleName() + " ";
 
     @Override
@@ -45,19 +42,39 @@ public abstract class BaseDialog<Layout extends ViewDataBinding> extends DialogF
 
     }
 
-    @NonNull
+    @Nullable
     @Override
-    public Dialog onCreateDialog(@Nullable Bundle savedInstanceState) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(mContext);
-        if (parentView == null) {
-            initLayout();
-            parentView = LayoutInflater.from(mContext).inflate(mLayoutID, null);
-            baseBind = DataBindingUtil.bind(parentView);
-            initView(parentView);
-            initData();
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+        initLayout();
+        baseBind = DataBindingUtil.inflate(inflater, mLayoutID, container, false);
+        if (baseBind != null) {
+            parentView = baseBind.getRoot();
+        } else {
+            parentView = inflater.inflate(mLayoutID, container, false);
         }
-        builder.setView(parentView);
-        return builder.create();
+        return parentView;
+    }
+
+    @Override
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        initView(view);
+        initData();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        Dialog dialog = getDialog();
+        if(dialog != null){
+            Window window = dialog.getWindow();
+            if (window != null) {
+                WindowManager.LayoutParams lp = window.getAttributes();
+                lp.width = getResources().getDisplayMetrics().widthPixels * 6 / 7; //设置宽度
+                window.setAttributes(lp);
+//                window.setWindowAnimations(R.style.dialog_animation_scale);
+//                window.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));//设置Dialog背景透明
+            }
+        }
     }
 
     abstract void initLayout();

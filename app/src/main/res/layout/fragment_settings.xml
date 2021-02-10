@@ -9,19 +9,28 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@color/light_bg"
+        android:background="@color/f5_to_deep_dark"
         android:orientation="vertical">
 
         <androidx.appcompat.widget.Toolbar
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@color/colorPrimary"
+            android:background="?attr/colorPrimary"
             android:elevation="@dimen/six_dp"
             android:fitsSystemWindows="true"
-            app:navigationIcon="@drawable/ic_arrow_back_black_24dp"
-            app:title="设置"
-            app:titleTextColor="@android:color/white">
+            app:navigationIcon="@drawable/ic_baseline_arrow_back_ios_24">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="@string/app_settings"
+                android:id="@+id/toolbar_title"
+                android:textColor="@color/white"
+                android:textSize="18sp">
+
+            </TextView>
 
         </androidx.appcompat.widget.Toolbar>
 
@@ -38,212 +47,121 @@
                     android:id="@+id/parent_linear"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:background="@color/white"
                     android:orientation="vertical">
 
+                    <TextView
+                        style="@style/setting_text_head"
+                        android:text="@string/account"/>
 
                     <LinearLayout
+                        android:background="@color/white_and_black"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="vertical">
 
-                        <View
-                            android:layout_width="match_parent"
-                            android:layout_height="20dp"
-                            android:background="@color/light_bg">
-
-
-                        </View>
-
-                        <RelativeLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content">
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="@dimen/sixteen_dp"
-                                android:layout_marginTop="@dimen/eight_dp"
-                                android:layout_marginBottom="@dimen/eight_dp"
-                                android:text="@string/account"
-                                android:textColor="@color/hint_text"
-                                android:textSize="13sp" />
-                        </RelativeLayout>
-
+                        <View style="@style/full_divider" />
 
                         <RelativeLayout
                             android:id="@+id/user_manage"
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:background="?android:attr/selectableItemBackground"
-                            android:clickable="true">
-
+                            style="@style/ripple_rela">
 
                             <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_centerVertical="true"
-                                android:layout_margin="@dimen/sixteen_dp"
-                                android:text="@string/account_manage"
-                                android:textColor="@color/rank_text_color"
-                                android:textSize="15sp">
+                                style="@style/setting_text_left"
+                                android:text="@string/account_manage" />
 
-
-                            </TextView>
-
+                            <TextView style="@style/setting_right_arrow" />
 
                         </RelativeLayout>
 
-                        <View
-                            android:layout_width="match_parent"
-                            android:layout_height="1dp"
-                            android:layout_marginStart="@dimen/sixteen_dp"
-                            android:background="@color/settings_divider_bg">
-
-
-                        </View>
+                        <View style="@style/half_divider" />
 
                         <RelativeLayout
                             android:id="@+id/edit_account"
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:background="?android:attr/selectableItemBackground"
-                            android:clickable="true">
+                            style="@style/ripple_rela">
 
 
                             <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_margin="@dimen/sixteen_dp"
-                                android:text="编辑账号信息与邮箱绑定"
-                                android:textColor="@color/rank_text_color"
-                                android:textSize="15sp">
+                                style="@style/setting_text_left"
+                                android:text="@string/string_91" />
 
-                            </TextView>
-
+                            <TextView style="@style/setting_right_arrow" />
 
                         </RelativeLayout>
 
-
-                        <View
-                            android:layout_width="match_parent"
-                            android:layout_height="1dp"
-                            android:layout_marginStart="@dimen/sixteen_dp"
-                            android:background="@color/settings_divider_bg">
-
-
-                        </View>
+                        <View style="@style/half_divider" />
 
                         <RelativeLayout
                             android:id="@+id/edit_file"
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:background="?android:attr/selectableItemBackground"
-                            android:clickable="true">
+                            style="@style/ripple_rela">
 
 
                             <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_margin="@dimen/sixteen_dp"
-                                android:text="个人资料设置"
-                                android:textColor="@color/rank_text_color"
-                                android:textSize="15sp">
+                                style="@style/setting_text_left"
+                                android:text="@string/string_92" />
 
-                            </TextView>
+
+                            <TextView style="@style/setting_right_arrow" />
 
 
                         </RelativeLayout>
 
+                        <View style="@style/half_divider" />
 
-                        <View
-                            android:layout_width="match_parent"
-                            android:layout_height="1dp"
-                            android:layout_marginStart="@dimen/sixteen_dp"
-                            android:background="@color/settings_divider_bg">
+                        <RelativeLayout
+                            android:id="@+id/work_space"
+                            style="@style/ripple_rela">
 
 
-                        </View>
+                            <TextView
+                                style="@style/setting_text_left"
+                                android:text="@string/string_267" />
 
+
+                            <TextView style="@style/setting_right_arrow" />
+
+
+                        </RelativeLayout>
+
+                        <View style="@style/half_divider" />
 
                         <RelativeLayout
                             android:id="@+id/login_out"
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:background="?android:attr/selectableItemBackground"
-                            android:clickable="true">
-
+                            style="@style/ripple_rela">
 
                             <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_centerVertical="true"
-                                android:layout_margin="@dimen/sixteen_dp"
-                                android:text="@string/login_out"
-                                android:textColor="@color/rank_text_color"
-                                android:textSize="15sp">
+                                style="@style/setting_text_left"
+                                android:text="@string/login_out" />
 
-
-                            </TextView>
-
+                            <TextView style="@style/setting_right_arrow" />
 
                         </RelativeLayout>
+
+                        <View style="@style/full_divider" />
 
                     </LinearLayout>
 
 
+                    <TextView
+                        style="@style/setting_text_head"
+                        android:text="@string/about_network"/>
+
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:background="@color/white_and_black"
                         android:orientation="vertical">
 
-                        <View
-                            android:layout_width="match_parent"
-                            android:layout_height="20dp"
-                            android:background="@color/light_bg">
-
-
-                        </View>
-
-                        <RelativeLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content">
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="@dimen/sixteen_dp"
-                                android:layout_marginTop="@dimen/eight_dp"
-                                android:layout_marginBottom="@dimen/eight_dp"
-                                android:text="@string/normal"
-                                android:textColor="@color/hint_text"
-                                android:textSize="13sp" />
-                        </RelativeLayout>
-
+                        <View style="@style/full_divider" />
 
                         <RelativeLayout
                             android:id="@+id/fuck_china_rela"
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:background="?android:attr/selectableItemBackground"
-                            android:clickable="true">
-
+                            style="@style/ripple_rela">
 
                             <TextView
+                                style="@style/setting_text_left"
                                 android:id="@+id/fuck_china_s"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="@dimen/sixteen_dp"
-                                android:layout_marginTop="@dimen/sixteen_dp"
                                 android:layout_marginBottom="@dimen/six_dp"
-                                android:layout_toStartOf="@+id/auto_dns"
-                                android:text="@string/open_direct_connection"
-                                android:textColor="@color/rank_text_color"
-                                android:textSize="15sp">
-
-
-                            </TextView>
-
+                                android:text="@string/open_direct_connection" />
 
                             <TextView
                                 android:id="@+id/fuck_china"
@@ -251,337 +169,285 @@
                                 android:layout_height="wrap_content"
                                 android:layout_below="@+id/fuck_china_s"
                                 android:layout_marginStart="@dimen/sixteen_dp"
-                                android:layout_marginBottom="@dimen/sixteen_dp"
+                                android:layout_marginBottom="@dimen/twelve_dp"
                                 android:ellipsize="start"
                                 android:singleLine="true"
                                 android:text="@string/see_pixiv_ez"
-                                android:textColor="@color/hint_text"
-                                android:textSize="13sp" />
+                                android:textColor="?attr/colorPrimary"
+                                android:textSize="12sp" />
 
 
-                            <Switch
+                            <androidx.appcompat.widget.SwitchCompat
                                 android:id="@+id/auto_dns"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_alignParentEnd="true"
-                                android:layout_centerVertical="true"
-                                android:layout_margin="@dimen/sixteen_dp"
-                                android:checked="true" />
+                                style="@style/setting_right_switch" />
 
 
                         </RelativeLayout>
 
-                        <View
-                            android:layout_width="match_parent"
-                            android:layout_height="1dp"
-                            android:layout_marginStart="@dimen/sixteen_dp"
-                            android:background="@color/settings_divider_bg"
-                            android:visibility="gone" />
+                        <View style="@style/half_divider" />
 
 
                         <RelativeLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:background="?android:attr/selectableItemBackground"
-                            android:clickable="true"
-                            android:visibility="gone">
-
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_centerVertical="true"
-                                android:layout_margin="@dimen/sixteen_dp"
-                                android:text="图片详情样式"
-                                android:textColor="@color/rank_text_color"
-                                android:textSize="15sp">
-
-                            </TextView>
-
-
-                            <Switch
-                                android:id="@+id/detail_type"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_alignParentEnd="true"
-                                android:layout_centerVertical="true"
-                                android:layout_margin="@dimen/sixteen_dp"
-                                android:checked="true" />
-
-
-                        </RelativeLayout>
-
-                        <View
-                            android:layout_width="match_parent"
-                            android:layout_height="1dp"
-                            android:layout_marginStart="@dimen/sixteen_dp"
-                            android:background="@color/settings_divider_bg">
-
-
-                        </View>
-
-                        <RelativeLayout
-                            android:layout_width="match_parent"
                             android:id="@+id/first_detail_origin_rela"
-                            android:layout_height="match_parent"
-                            android:background="?android:attr/selectableItemBackground"
-                            android:clickable="true">
-
+                            style="@style/ripple_rela">
 
                             <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_centerVertical="true"
-                                android:layout_margin="@dimen/sixteen_dp"
-                                android:text="@string/show_original_image"
-                                android:textColor="@color/rank_text_color"
-                                android:textSize="15sp">
-
-
-                            </TextView>
-
-
-                            <Switch
-                                android:id="@+id/first_detail_origin"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_alignParentEnd="true"
-                                android:layout_centerVertical="true"
-                                android:layout_margin="@dimen/sixteen_dp"
-                                android:checked="true" />
-
-
-                        </RelativeLayout>
-
-                        <View
-                            android:layout_width="match_parent"
-                            android:layout_height="1dp"
-                            android:layout_marginStart="@dimen/sixteen_dp"
-                            android:background="@color/settings_divider_bg">
-
-
-                        </View>
-
-                        <RelativeLayout
-                            android:id="@+id/save_history_rela"
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:background="?android:attr/selectableItemBackground"
-                            android:clickable="true">
-
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_centerVertical="true"
-                                android:layout_margin="@dimen/sixteen_dp"
-                                android:text="@string/save_view_history"
-                                android:textColor="@color/rank_text_color"
-                                android:textSize="15sp">
-
-
-                            </TextView>
-
-
-                            <Switch
-                                android:id="@+id/save_history"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_alignParentEnd="true"
-                                android:layout_centerVertical="true"
-                                android:layout_margin="@dimen/sixteen_dp"
-                                android:checked="true" />
-
-
-                        </RelativeLayout>
-
-                        <View
-                            android:layout_width="match_parent"
-                            android:layout_height="1dp"
-                            android:layout_marginStart="@dimen/sixteen_dp"
-                            android:background="@color/settings_divider_bg">
-
-
-                        </View>
-
-                        <RelativeLayout
-                            android:id="@+id/stagger_data_rela"
-                            android:layout_width="match_parent"
-                            android:background="?android:attr/selectableItemBackground"
-                            android:clickable="true"
-                            android:layout_height="match_parent">
-
-
-                            <TextView
-                                android:layout_margin="@dimen/sixteen_dp"
-                                android:text="@string/double_stagger_data"
-                                android:textSize="15sp"
-                                android:layout_centerVertical="true"
-                                android:textColor="@color/rank_text_color"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content">
-
-                            </TextView>
-
-
-                            <Switch
-                                android:layout_width="wrap_content"
-                                android:checked="true"
-                                android:id="@+id/stagger_data"
-                                android:layout_alignParentEnd="true"
-                                android:layout_centerVertical="true"
-                                android:layout_margin="@dimen/sixteen_dp"
-                                android:layout_height="wrap_content" />
-
-
-                        </RelativeLayout>
-
-                        <View
-                            android:layout_width="match_parent"
-                            android:background="@color/settings_divider_bg"
-                            android:layout_marginStart="@dimen/sixteen_dp"
-                            android:layout_height="1dp">
-
-
-                        </View>
-
-                        <RelativeLayout
-                            android:id="@+id/show_like_button_rela"
-                            android:layout_width="match_parent"
-                            android:background="?android:attr/selectableItemBackground"
-                            android:clickable="true"
-                            android:layout_height="match_parent">
-
-
-                            <TextView
-                                android:layout_margin="@dimen/sixteen_dp"
-                                android:text="@string/show_like_button"
-                                android:textSize="15sp"
-                                android:layout_centerVertical="true"
-                                android:textColor="@color/rank_text_color"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content">
-
-                            </TextView>
-
-
-                            <Switch
-                                android:layout_width="wrap_content"
-                                android:checked="true"
-                                android:id="@+id/show_like_button"
-                                android:layout_alignParentEnd="true"
-                                android:layout_centerVertical="true"
-                                android:layout_margin="@dimen/sixteen_dp"
-                                android:layout_height="wrap_content" />
-
-
-                        </RelativeLayout>
-
-                        <View
-                            android:layout_width="match_parent"
-                            android:background="@color/settings_divider_bg"
-                            android:layout_marginStart="@dimen/sixteen_dp"
-                            android:layout_height="1dp">
-
-
-                        </View>
-
-
-                        <RelativeLayout
-                            android:id="@+id/related_no_limit_rela"
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:background="?android:attr/selectableItemBackground"
-                            android:clickable="true">
-
+                                style="@style/setting_text_left"
+                                android:layout_marginBottom="@dimen/six_dp"
+                                android:id="@+id/use_pixivcat_mark"
+                                android:text="@string/string_331" />
 
                             <TextView
                                 android:layout_width="match_parent"
+                                android:layout_toStartOf="@+id/first_detail_origin"
                                 android:layout_height="wrap_content"
-                                android:layout_centerVertical="true"
-                                android:layout_margin="@dimen/sixteen_dp"
-                                android:layout_toStartOf="@+id/related_no_limit"
-                                android:text="@string/slide_down_endless"
-                                android:textColor="@color/rank_text_color"
-                                android:textSize="15sp">
+                                android:layout_below="@+id/use_pixivcat_mark"
+                                android:layout_marginStart="@dimen/sixteen_dp"
+                                android:layout_marginBottom="@dimen/twelve_dp"
+                                android:textColor="?attr/colorPrimary"
+                                android:ellipsize="start"
+                                android:singleLine="true"
+                                android:text="@string/string_333"
+                                android:textSize="12sp" />
 
-
-                            </TextView>
-
-
-                            <Switch
-                                android:id="@+id/related_no_limit"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_alignParentEnd="true"
-                                android:layout_centerVertical="true"
-                                android:layout_margin="@dimen/sixteen_dp"
-                                android:checked="true" />
-
+                            <androidx.appcompat.widget.SwitchCompat
+                                android:id="@+id/first_detail_origin"
+                                style="@style/setting_right_switch"/>
 
                         </RelativeLayout>
+
+                        <View style="@style/half_divider" />
+
+
+                        <RelativeLayout
+                            android:id="@+id/show_original_image_rela"
+                            style="@style/ripple_rela">
+
+                            <TextView
+                                style="@style/setting_text_left"
+                                android:id="@+id/show_original_image_mark"
+                                android:layout_marginBottom="@dimen/six_dp"
+                                android:text="@string/string_332" />
+
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_toStartOf="@+id/show_original_image"
+                                android:layout_height="wrap_content"
+                                android:layout_below="@+id/show_original_image_mark"
+                                android:layout_marginStart="@dimen/sixteen_dp"
+                                android:layout_marginBottom="@dimen/twelve_dp"
+                                android:textColor="?attr/colorPrimary"
+                                android:ellipsize="start"
+                                android:singleLine="true"
+                                android:text="@string/string_334"
+                                android:textSize="12sp" />
+
+                            <androidx.appcompat.widget.SwitchCompat
+                                android:id="@+id/show_original_image"
+                                style="@style/setting_right_switch"/>
+
+                        </RelativeLayout>
+
+                        <View style="@style/full_divider" />
+
                     </LinearLayout>
+
+                    <TextView
+                        style="@style/setting_text_head"
+                        android:text="@string/normal"/>
 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:background="@color/white_and_black"
                         android:orientation="vertical">
 
-
-                        <View
-                            android:layout_width="match_parent"
-                            android:layout_height="20dp"
-                            android:background="@color/light_bg">
+                        <View style="@style/full_divider" />
 
 
-                        </View>
 
                         <RelativeLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content">
+                            android:id="@+id/save_history_rela"
+                            style="@style/ripple_rela">
 
                             <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="@dimen/sixteen_dp"
-                                android:layout_marginTop="@dimen/eight_dp"
-                                android:layout_marginBottom="@dimen/eight_dp"
-                                android:text="@string/other_settings"
-                                android:textColor="@color/hint_text"
-                                android:textSize="13sp" />
+                                style="@style/setting_text_left"
+                                android:text="@string/save_view_history" />
+
+                            <androidx.appcompat.widget.SwitchCompat
+                                android:id="@+id/save_history"
+                                style="@style/setting_right_switch"/>
+
+
                         </RelativeLayout>
 
+                        <View style="@style/half_divider" />
 
                         <RelativeLayout
-                            android:id="@+id/theme_mode_rela"
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:background="?android:attr/selectableItemBackground"
-                            android:clickable="true">
-
+                            android:id="@+id/delete_star_illust_rela"
+                            style="@style/ripple_rela">
 
                             <TextView
-                                android:id="@+id/theme_mode_s"
+                                style="@style/setting_text_left"
+                                android:text="@string/delete_star_illust" />
+
+                            <androidx.appcompat.widget.SwitchCompat
+                                android:id="@+id/delete_star_illust"
+                                style="@style/setting_right_switch"/>
+
+
+                        </RelativeLayout>
+
+                        <View style="@style/half_divider" />
+
+                        <RelativeLayout
+                            android:id="@+id/show_like_button_rela"
+                            style="@style/ripple_rela">
+
+                            <TextView
+                                style="@style/setting_text_left"
+                                android:text="@string/string_335" />
+
+                            <androidx.appcompat.widget.SwitchCompat
+                                android:id="@+id/show_like_button"
+                                style="@style/setting_right_switch"/>
+
+
+                        </RelativeLayout>
+
+                        <View style="@style/half_divider" />
+
+                        <RelativeLayout
+                            android:id="@+id/r18_divide_save_rela"
+                            style="@style/ripple_rela">
+
+                            <TextView
+                                style="@style/setting_text_left"
+                                android:text="@string/string_338" />
+
+                            <androidx.appcompat.widget.SwitchCompat
+                                android:id="@+id/r18_divide_save"
+                                style="@style/setting_right_switch"/>
+
+                        </RelativeLayout>
+
+                        <View style="@style/half_divider" />
+
+                        <RelativeLayout
+                            android:id="@+id/bottom_bar_order_rela"
+                            style="@style/ripple_rela">
+
+                            <TextView
+                                style="@style/setting_text_left"
+                                android:text="@string/string_342" />
+
+                            <TextView
+                                android:id="@+id/order_select"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
+                                android:layout_alignParentEnd="true"
+                                android:layout_marginEnd="@dimen/sixteen_dp"
                                 android:layout_centerVertical="true"
-                                android:layout_margin="@dimen/sixteen_dp"
-                                android:text="@string/theme_mode"
-                                android:textColor="@color/rank_text_color"
-                                android:textSize="15sp">
-
+                                android:text="@string/string_325"
+                                android:textColor="?attr/colorPrimary"
+                                android:textSize="14sp">
 
                             </TextView>
 
+
+                        </RelativeLayout>
+
+                        <View style="@style/half_divider" />
+
+                        <RelativeLayout
+                            android:id="@+id/file_name_rela"
+                            style="@style/ripple_rela">
+
+                            <TextView
+                                android:id="@+id/file_name_s"
+                                style="@style/setting_text_left"
+                                android:text="@string/custom_file_name" />
+
+                            <TextView
+                                android:id="@+id/file_name"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_alignParentEnd="true"
+                                android:layout_marginEnd="@dimen/sixteen_dp"
+                                android:layout_centerVertical="true"
+                                android:text="@string/string_94"
+                                android:textColor="?attr/colorPrimary"
+                                android:textSize="14sp">
+
+                            </TextView>
+                        </RelativeLayout>
+                    </LinearLayout>
+
+                    <View style="@style/full_divider" />
+
+                    <TextView
+                        style="@style/setting_text_head"
+                        android:text="@string/other_settings"/>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@color/white_and_black"
+                        android:orientation="vertical">
+
+                        <View style="@style/full_divider" />
+
+                        <RelativeLayout
+                            android:id="@+id/illust_detail_user_new_rela"
+                            style="@style/ripple_rela">
+
+                            <TextView
+                                style="@style/setting_text_left"
+                                android:text="@string/illust_detail" />
+
+                            <androidx.appcompat.widget.SwitchCompat
+                                android:id="@+id/illust_detail_user_new"
+                                style="@style/setting_right_switch"/>
+
+
+                        </RelativeLayout>
+
+                        <View style="@style/half_divider" />
+
+                        <RelativeLayout
+                            android:id="@+id/user_new_user_rela"
+                            style="@style/ripple_rela">
+
+                            <TextView
+                                style="@style/setting_text_left"
+                                android:text="@string/user_detail" />
+
+                            <androidx.appcompat.widget.SwitchCompat
+                                android:id="@+id/user_new_user"
+                                style="@style/setting_right_switch"/>
+
+
+                        </RelativeLayout>
+
+                        <View style="@style/half_divider" />
+
+                        <RelativeLayout
+                            android:id="@+id/theme_mode_rela"
+                            style="@style/ripple_rela">
+
+                            <TextView
+                                style="@style/setting_text_left"
+                                android:text="@string/theme_mode" />
 
                             <TextView
                                 android:id="@+id/theme_mode"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_alignParentEnd="true"
-                                android:layout_margin="@dimen/sixteen_dp"
-                                android:text="主题"
-                                android:textColor="@color/hint_text"
+                                android:layout_marginEnd="@dimen/sixteen_dp"
+                                android:layout_centerVertical="true"
+                                android:text="@string/string_95"
+                                android:textColor="?attr/colorPrimary"
                                 android:textSize="14sp">
 
 
@@ -590,36 +456,69 @@
 
                         </RelativeLayout>
 
-
-                        <View
-                            android:layout_width="match_parent"
-                            android:layout_height="1dp"
-                            android:layout_marginStart="@dimen/sixteen_dp"
-                            android:background="@color/settings_divider_bg">
-
-
-                        </View>
+                        <View style="@style/half_divider" />
 
                         <RelativeLayout
-                            android:id="@+id/search_filter_rela"
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:background="?android:attr/selectableItemBackground"
-                            android:clickable="true">
-
+                            android:id="@+id/color_select_rela"
+                            style="@style/ripple_rela">
 
                             <TextView
-                                android:id="@+id/search_filter_s"
+                                style="@style/setting_text_left"
+                                android:text="@string/string_324" />
+
+                            <TextView
+                                android:id="@+id/color_select"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
+                                android:layout_alignParentEnd="true"
+                                android:layout_marginEnd="@dimen/sixteen_dp"
                                 android:layout_centerVertical="true"
-                                android:layout_margin="@dimen/sixteen_dp"
-                                android:text="@string/search_result_filter"
-                                android:textColor="@color/rank_text_color"
-                                android:textSize="15sp">
+                                android:text="@string/string_325"
+                                android:textColor="?attr/colorPrimary"
+                                android:textSize="14sp">
 
 
                             </TextView>
+
+
+                        </RelativeLayout>
+
+                        <View style="@style/half_divider" />
+
+                        <RelativeLayout
+                            android:id="@+id/line_count_rela"
+                            style="@style/ripple_rela">
+
+                            <TextView
+                                style="@style/setting_text_left"
+                                android:text="@string/string_336" />
+
+                            <TextView
+                                android:id="@+id/line_count"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_alignParentEnd="true"
+                                android:layout_marginEnd="@dimen/sixteen_dp"
+                                android:layout_centerVertical="true"
+                                android:text="@string/string_95"
+                                android:textColor="?attr/colorPrimary"
+                                android:textSize="14sp">
+
+
+                            </TextView>
+
+
+                        </RelativeLayout>
+
+                        <View style="@style/half_divider" />
+
+                        <RelativeLayout
+                            android:id="@+id/search_filter_rela"
+                            style="@style/ripple_rela">
+
+                            <TextView
+                                style="@style/setting_text_left"
+                                android:text="@string/search_result_filter" />
 
 
                             <TextView
@@ -627,9 +526,10 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_alignParentEnd="true"
-                                android:layout_margin="@dimen/sixteen_dp"
-                                android:text="10000"
-                                android:textColor="@color/hint_text"
+                                android:layout_marginEnd="@dimen/sixteen_dp"
+                                android:layout_centerVertical="true"
+                                android:text="@string/string_96"
+                                android:textColor="?attr/colorPrimary"
                                 android:textSize="14sp">
 
 
@@ -638,46 +538,25 @@
 
                         </RelativeLayout>
 
-
-                        <View
-                            android:layout_width="match_parent"
-                            android:layout_height="1dp"
-                            android:layout_marginStart="@dimen/sixteen_dp"
-                            android:background="@color/settings_divider_bg">
-
-
-                        </View>
+                        <View style="@style/half_divider" />
 
                         <RelativeLayout
                             android:id="@+id/app_language_rela"
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:background="?android:attr/selectableItemBackground"
-                            android:clickable="true">
-
+                            style="@style/ripple_rela">
 
                             <TextView
-                                android:id="@+id/app_language_s"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_centerVertical="true"
-                                android:layout_margin="@dimen/sixteen_dp"
-                                android:text="@string/language"
-                                android:textColor="@color/rank_text_color"
-                                android:textSize="15sp">
-
-
-                            </TextView>
-
+                                style="@style/setting_text_left"
+                                android:text="@string/language" />
 
                             <TextView
                                 android:id="@+id/app_language"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
+                                android:layout_marginEnd="@dimen/sixteen_dp"
+                                android:layout_centerVertical="true"
                                 android:layout_alignParentEnd="true"
-                                android:layout_margin="@dimen/sixteen_dp"
-                                android:text="简体中文"
-                                android:textColor="@color/hint_text"
+                                android:text="@string/string_97"
+                                android:textColor="?attr/colorPrimary"
                                 android:textSize="14sp">
 
 
@@ -686,91 +565,31 @@
 
                         </RelativeLayout>
 
-<!--                        <View-->
-<!--                            android:layout_width="match_parent"-->
-<!--                            android:layout_height="1dp"-->
-<!--                            android:layout_marginStart="@dimen/sixteen_dp"-->
-<!--                            android:background="@color/settings_divider_bg" />-->
+                        <View style="@style/full_divider" />
 
-<!--                        <RelativeLayout-->
-<!--                            android:layout_width="match_parent"-->
-<!--                            android:layout_height="match_parent"-->
-<!--                            android:background="?android:attr/selectableItemBackground"-->
-<!--                            android:clickable="true">-->
-
-<!--                            <TextView-->
-<!--                                android:id="@+id/fullscreen_layout_s"-->
-<!--                                android:layout_width="wrap_content"-->
-<!--                                android:layout_height="wrap_content"-->
-<!--                                android:layout_centerVertical="true"-->
-<!--                                android:layout_margin="@dimen/sixteen_dp"-->
-<!--                                android:text="@string/fullscreen_layout"-->
-<!--                                android:textColor="@color/rank_text_color"-->
-<!--                                android:textSize="15sp" />-->
-
-<!--                            <Switch-->
-<!--                                android:id="@+id/fullscreen_layout"-->
-<!--                                android:layout_width="wrap_content"-->
-<!--                                android:layout_height="wrap_content"-->
-<!--                                android:layout_alignParentEnd="true"-->
-<!--                                android:layout_centerVertical="true"-->
-<!--                                android:layout_margin="@dimen/sixteen_dp"-->
-<!--                                android:checked="false" />-->
-
-<!--                        </RelativeLayout>-->
                     </LinearLayout>
 
+                    <TextView
+                        style="@style/setting_text_head"
+                        android:text="@string/download_path"/>
 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:background="@color/white_and_black"
                         android:orientation="vertical">
 
-                        <View
-                            android:layout_width="match_parent"
-                            android:layout_height="20dp"
-                            android:background="@color/light_bg">
-
-                        </View>
-
-                        <RelativeLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content">
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="@dimen/sixteen_dp"
-                                android:layout_marginTop="@dimen/eight_dp"
-                                android:layout_marginBottom="@dimen/eight_dp"
-                                android:text="@string/download_path"
-                                android:textColor="@color/hint_text"
-                                android:textSize="13sp" />
-                        </RelativeLayout>
-
+                        <View style="@style/full_divider" />
 
                         <RelativeLayout
                             android:id="@+id/single_illust_path"
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:background="?android:attr/selectableItemBackground"
-                            android:clickable="true">
-
+                            style="@style/ripple_rela">
 
                             <TextView
                                 android:id="@+id/illust_path_s"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="@dimen/sixteen_dp"
-                                android:layout_marginTop="@dimen/sixteen_dp"
                                 android:layout_marginBottom="@dimen/six_dp"
-                                android:text="@string/illust_download_path"
-                                android:textColor="@color/rank_text_color"
-                                android:textSize="15sp">
-
-
-                            </TextView>
-
+                                style="@style/setting_text_left"
+                                android:text="@string/illust_download_path" />
 
                             <TextView
                                 android:id="@+id/illust_path"
@@ -778,11 +597,9 @@
                                 android:layout_height="wrap_content"
                                 android:layout_below="@+id/illust_path_s"
                                 android:layout_marginStart="@dimen/sixteen_dp"
-                                android:layout_marginBottom="@dimen/sixteen_dp"
-                                android:ellipsize="start"
-                                android:singleLine="true"
-                                android:text="/storage/emulated/0/Shaft/SingleImages"
-                                android:textColor="@color/hint_text"
+                                android:layout_marginBottom="@dimen/twelve_dp"
+                                android:text="@string/string_98"
+                                android:textColor="?attr/colorPrimary"
                                 android:textSize="13sp">
 
 
@@ -790,168 +607,56 @@
 
                         </RelativeLayout>
 
+                        <View style="@style/full_divider" />
 
-                        <View
-                            android:layout_width="match_parent"
-                            android:layout_height="1dp"
-                            android:layout_marginStart="@dimen/sixteen_dp"
-                            android:background="@color/settings_divider_bg">
+                    </LinearLayout>
 
+                    <TextView
+                        style="@style/setting_text_head"
+                        android:text="@string/string_100"/>
 
-                        </View>
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:orientation="vertical"
+                        android:layout_marginBottom="60dp"
+                        android:background="@color/white_and_black"
+                        android:layout_height="wrap_content">
 
+                        <View style="@style/full_divider" />
 
                         <RelativeLayout
-                            android:id="@+id/gif_unzip_path"
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:background="?android:attr/selectableItemBackground"
-                            android:clickable="true">
-
+                            android:id="@+id/clear_image_cache"
+                            style="@style/ripple_rela">
 
                             <TextView
-                                android:id="@+id/gif_result_s"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_margin="@dimen/sixteen_dp"
-                                android:text="@string/gif_result_path"
-                                android:textColor="@color/rank_text_color"
-                                android:textSize="15sp">
-
-
-                            </TextView>
+                                style="@style/setting_text_left"
+                                android:text="@string/string_101" />
 
                             <TextView
-                                android:id="@+id/gif_result"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_below="@+id/gif_result_s"
-                                android:layout_marginStart="@dimen/sixteen_dp"
-                                android:layout_marginBottom="@dimen/sixteen_dp"
-                                android:ellipsize="start"
-                                android:singleLine="true"
-                                android:text="/storage/emulated/0/Shaft/SingleImages"
-                                android:textColor="@color/hint_text"
-                                android:textSize="13sp" />
+                                android:id="@+id/image_cache_size"
+                                android:textColor="?attr/colorPrimary"
+                                style="@style/setting_right_arrow" />
 
                         </RelativeLayout>
 
-                        <View
-                            android:layout_width="match_parent"
-                            android:layout_height="20dp"
-                            android:background="@color/light_bg">
-
-                        </View>
-
-                        <RelativeLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content">
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="@dimen/sixteen_dp"
-                                android:layout_marginTop="@dimen/eight_dp"
-                                android:layout_marginBottom="@dimen/eight_dp"
-                                android:text="缓存"
-                                android:textColor="@color/hint_text"
-                                android:textSize="13sp" />
-                        </RelativeLayout>
-
-
-                        <RelativeLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:background="?android:attr/selectableItemBackground"
-                            android:clickable="true">
-
-
-                            <TextView
-                                android:id="@+id/clear_image_cache"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_centerVertical="true"
-                                android:layout_margin="@dimen/sixteen_dp"
-                                android:text="清除图片缓存"
-                                android:textColor="@color/rank_text_color"
-                                android:textSize="15sp">
-
-
-                            </TextView>
-
-
-                            <TextView
-                                android:id="@+id/real_image_cache"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_alignParentEnd="true"
-                                android:layout_margin="@dimen/sixteen_dp"
-                                android:text="50M"
-                                android:textColor="@color/hint_text"
-                                android:textSize="14sp">
-
-
-                            </TextView>
-
-
-                        </RelativeLayout>
-
-
-                        <View
-                            android:layout_width="match_parent"
-                            android:layout_height="1dp"
-                            android:layout_marginStart="@dimen/sixteen_dp"
-                            android:background="@color/settings_divider_bg"
-                            android:visibility="visible">
-
-
-                        </View>
-
+                        <View style="@style/half_divider" />
 
                         <RelativeLayout
                             android:id="@+id/clear_gif_cache"
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:background="?android:attr/selectableItemBackground"
-                            android:clickable="true">
-
+                            style="@style/ripple_rela">
 
                             <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_centerVertical="true"
-                                android:layout_margin="@dimen/sixteen_dp"
-                                android:text="清除GIF缓存"
-                                android:textColor="@color/rank_text_color"
-                                android:textSize="15sp">
-
-
-                            </TextView>
-
+                                style="@style/setting_text_left"
+                                android:text="@string/string_102" />
 
                             <TextView
-                                android:id="@+id/real_gif_cache"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_alignParentEnd="true"
-                                android:layout_margin="@dimen/sixteen_dp"
-                                android:text="200M"
-                                android:textColor="@color/hint_text"
-                                android:textSize="14sp">
-
-
-                            </TextView>
-
+                                android:id="@+id/gif_cache_size"
+                                android:textColor="?attr/colorPrimary"
+                                style="@style/setting_right_arrow" />
 
                         </RelativeLayout>
 
-                        <View
-                            android:layout_width="match_parent"
-                            android:layout_height="20dp"
-                            android:background="@color/light_bg">
-
-
-                        </View>
+                        <View style="@style/full_divider" />
 
                     </LinearLayout>
 
@@ -962,3 +667,4 @@
 
     </LinearLayout>
 </layout>
+

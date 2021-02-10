@@ -20,31 +20,25 @@ import ceui.lisa.activities.TemplateActivity;
 import ceui.lisa.database.AppDatabase;
 import ceui.lisa.database.UserEntity;
 import ceui.lisa.databinding.FragmentLocalUserBinding;
-import ceui.lisa.http.ErrorCtrl;
-import ceui.lisa.model.ExportUser;
+import ceui.lisa.http.NullCtrl;
 import ceui.lisa.models.UserModel;
-import ceui.lisa.utils.ClipBoardUtils;
+import ceui.lisa.utils.Base64Util;
 import ceui.lisa.utils.Common;
 import ceui.lisa.utils.Dev;
 import ceui.lisa.utils.GlideUtil;
 import ceui.lisa.utils.Local;
 import ceui.lisa.utils.Params;
-import ceui.lisa.utils.PixivOperate;
 import de.hdodenhof.circleimageview.CircleImageView;
 import io.reactivex.Observable;
 import io.reactivex.ObservableOnSubscribe;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.functions.Function;
 import io.reactivex.schedulers.Schedulers;
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
 
 import static ceui.lisa.activities.Shaft.sUserModel;
 
 public class FragmentLocalUsers extends BaseFragment<FragmentLocalUserBinding> {
 
-    //private SimpleDateFormat formatter = new SimpleDateFormat("MM月dd日 HH:mm:ss");
     private List<UserModel> allItems = new ArrayList<>();
 
     @Override
@@ -53,22 +47,14 @@ public class FragmentLocalUsers extends BaseFragment<FragmentLocalUserBinding> {
     }
 
     @Override
-    public void initView(View view) {
-        baseBind.toolbar.setNavigationOnClickListener(new View.OnClickListener() {
+    public void initView() {
+        baseBind.toolbar.toolbarTitle.setText(R.string.string_251);
+        baseBind.toolbar.toolbar.setNavigationOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 mActivity.finish();
             }
         });
-        baseBind.loginOut.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent intent = new Intent(mContext, TemplateActivity.class);
-                intent.putExtra(TemplateActivity.EXTRA_FRAGMENT, "登录注册");
-                startActivity(intent);
-            }
-        });
-
         baseBind.addUser.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -80,7 +66,7 @@ public class FragmentLocalUsers extends BaseFragment<FragmentLocalUserBinding> {
     }
 
     @Override
-    void initData() {
+    protected void initData() {
         Observable.create((ObservableOnSubscribe<List<UserEntity>>) emitter -> {
             List<UserEntity> temp = AppDatabase.getAppDatabase(mContext)
                     .downloadDao().getAllUser();
@@ -97,16 +83,14 @@ public class FragmentLocalUsers extends BaseFragment<FragmentLocalUserBinding> {
                     }
                 }).subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new ErrorCtrl<List<UserModel>>() {
+                .subscribe(new NullCtrl<List<UserModel>>() {
                     @Override
-                    public void onNext(List<UserModel> userModels) {
-                        if (userModels != null) {
-                            if (userModels.size() != 0) {
-                                for (int i = 0; i < userModels.size(); i++) {
-                                    View v = LayoutInflater.from(mContext).inflate(R.layout.recy_loal_user, null);
-                                    bindData(v, userModels.get(i));
-                                    baseBind.userList.addView(v);
-                                }
+                    public void success(List<UserModel> userModels) {
+                        if (userModels.size() != 0) {
+                            for (int i = 0; i < userModels.size(); i++) {
+                                View v = View.inflate(mContext, R.layout.recy_local_user, null);
+                                bindData(v, userModels.get(i));
+                                baseBind.userList.addView(v);
                             }
                         }
                     }
@@ -152,9 +136,14 @@ public class FragmentLocalUsers extends BaseFragment<FragmentLocalUserBinding> {
             @Override
             public void onClick(View v) {
                 userModel.getResponse().setLocal_user(Params.USER_KEY);
+                //生成加密后的密码
+                String secretPassword = Base64Util.encode(userModel.getResponse().getUser().getPassword());
+                //添加一个标识，是已加密的密码
+                String passwordWithSign = Params.SECRET_PWD_KEY + secretPassword;
+                userModel.getResponse().getUser().setPassword(passwordWithSign);
                 String userJson = Shaft.sGson.toJson(userModel);
                 Common.copy(mContext, userJson, false);
-                Common.showToast("已导出到剪切板", exp);
+                Common.showToast("已导出到剪切板", 2);
             }
         });
 
@@ -167,28 +156,6 @@ public class FragmentLocalUsers extends BaseFragment<FragmentLocalUserBinding> {
                 Intent intent = new Intent(mContext, MainActivity.class);
                 MainActivity.newInstance(intent, mContext);
                 mActivity.finish();
-
-//                baseBind.progress.setVisibility(View.VISIBLE);
-//                PixivOperate.refreshUserData(userModel, new Callback<UserModel>() {
-//                    @Override
-//                    public void onResponse(Call<UserModel> call, Response<UserModel> response) {
-//                        if (response != null) {
-//                            UserModel newUser = response.body();
-//                            newUser.getResponse().getUser().setPassword(userModel.getResponse().getUser().getPassword());
-//                            newUser.getResponse().getUser().setIs_login(true);
-//                            Local.saveUser(newUser);
-//                            Dev.refreshUser = true;
-//                            mActivity.finish();
-//                        }
-//                        baseBind.progress.setVisibility(View.INVISIBLE);
-//                    }
-//
-//                    @Override
-//                    public void onFailure(Call<UserModel> call, Throwable t) {
-//                        Common.showToast(t.toString());
-//                        baseBind.progress.setVisibility(View.INVISIBLE);
-//                    }
-//                });
             }
         });
     }

@@ -1,12 +1,9 @@
 package ceui.lisa.models;
 
-import android.text.TextUtils;
-
-import java.io.File;
 import java.io.Serializable;
 import java.util.List;
 
-public class IllustsBean implements Serializable {
+public class IllustsBean implements Serializable, Starable {
     /**
      * id : 73949833
      * title : 命に繋がる魂の絆
@@ -34,7 +31,6 @@ public class IllustsBean implements Serializable {
      */
 
     private int id;
-    private int gifDelay;
     private String title;
     private String type;
     private ImageUrlsBean image_urls;
@@ -48,7 +44,7 @@ public class IllustsBean implements Serializable {
     private int height;
     private int sanity_level;
     private int x_restrict;
-    private Object series;
+    private SeriesBean series;
     private MetaSinglePageBean meta_single_page;
     private int total_view;
     private int total_bookmarks;
@@ -56,7 +52,7 @@ public class IllustsBean implements Serializable {
     private boolean visible;
     private boolean is_muted;
     private List<TagsBean> tags;
-    private List<?> tools;
+    private List<String> tools;
     private List<MetaPagesBean> meta_pages;
     private boolean isShield; //是否被屏蔽
 
@@ -168,11 +164,11 @@ public class IllustsBean implements Serializable {
         this.x_restrict = x_restrict;
     }
 
-    public Object getSeries() {
+    public SeriesBean getSeries() {
         return series;
     }
 
-    public void setSeries(Object series) {
+    public void setSeries(SeriesBean series) {
         this.series = series;
     }
 
@@ -232,11 +228,11 @@ public class IllustsBean implements Serializable {
         this.tags = tags;
     }
 
-    public List<?> getTools() {
+    public List<String> getTools() {
         return tools;
     }
 
-    public void setTools(List<?> tools) {
+    public void setTools(List<String> tools) {
         this.tools = tools;
     }
 
@@ -259,15 +255,6 @@ public class IllustsBean implements Serializable {
     public String getSize() {
         return getWidth() + "px * " + getHeight() + "px";
     }
-
-    public int getGifDelay() {
-        return gifDelay;
-    }
-
-    public void setGifDelay(int gifDelay) {
-        this.gifDelay = gifDelay;
-    }
-
 
     @Override
     public String toString() {
@@ -319,19 +306,27 @@ public class IllustsBean implements Serializable {
         return result;
     }
 
-    public static class MetaPagesBean implements Serializable {
-        /**
-         * image_urls : {"square_medium":"https://i.pximg.net/c/360x360_70/img-master/img/2019/04/03/21/13/11/74027091_p0_square1200.jpg","medium":"https://i.pximg.net/c/540x540_70/img-master/img/2019/04/03/21/13/11/74027091_p0_master1200.jpg","large":"https://i.pximg.net/c/600x1200_90/img-master/img/2019/04/03/21/13/11/74027091_p0_master1200.jpg","original":"https://i.pximg.net/img-original/img/2019/04/03/21/13/11/74027091_p0.png"}
-         */
+    @Override
+    public int getItemID() {
+        return getId();
+    }
 
-        private ImageUrlsBean image_urls;
+    @Override
+    public void setItemID(int id) {
+        setId(id);
+    }
 
-        public ImageUrlsBean getImage_urls() {
-            return image_urls;
-        }
+    @Override
+    public boolean isItemStared() {
+        return isIs_bookmarked();
+    }
 
-        public void setImage_urls(ImageUrlsBean image_urls) {
-            this.image_urls = image_urls;
-        }
+    @Override
+    public void setItemStared(boolean isLike) {
+        setIs_bookmarked(isLike);
+    }
+
+    public boolean isR18File() {
+        return x_restrict == 1 || sanity_level >= 4;
     }
 }

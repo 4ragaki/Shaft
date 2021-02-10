@@ -28,9 +28,9 @@ public class HttpDns implements Dns {
 //    };
 
     private static final String[] addresses = {
+            "210.140.131.188",
             "210.140.131.218",
             "210.140.131.187",
-            "210.140.131.188",
             "210.140.131.189"
     };
     public static List<InetAddress> newDns = new ArrayList<>();

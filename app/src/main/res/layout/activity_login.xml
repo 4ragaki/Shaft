@@ -9,14 +9,14 @@
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@color/colorPrimary">
+        android:background="?attr/colorPrimary">
 
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
             android:id="@+id/fragment_login"
             android:layout_height="match_parent"
-            android:background="@color/colorPrimary">
+            android:background="?attr/colorPrimary">
 
 
             <androidx.cardview.widget.CardView
@@ -26,13 +26,13 @@
                 android:clickable="true"
                 android:foreground="?attr/selectableItemBackground"
                 app:cardBackgroundColor="@android:color/white"
-                app:cardCornerRadius="@dimen/six_dp"
+                app:cardCornerRadius="@dimen/twelve_dp"
                 app:cardElevation="@dimen/twelve_dp"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
-                app:layout_constraintWidth_percent="0.7">
+                app:layout_constraintWidth_percent="0.8">
 
 
                 <RelativeLayout
@@ -46,8 +46,8 @@
                         android:layout_centerHorizontal="true"
                         android:gravity="center"
                         android:padding="@dimen/sixteen_dp"
-                        android:text="Shaft"
-                        android:textColor="@color/colorPrimary"
+                        android:text="@string/string_8"
+                        android:textColor="?attr/colorPrimary"
                         android:textSize="17sp"
                         android:textStyle="bold" />
 
@@ -69,11 +69,13 @@
                                 android:id="@+id/user_name"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
+                                android:singleLine="true"
+                                android:ellipsize="end"
                                 android:layout_marginStart="@dimen/tweenty_four_dp"
                                 android:layout_marginEnd="@dimen/tweenty_four_dp"
-                                android:hint="用户名/邮箱账号"
+                                android:hint="@string/string_9"
                                 app:met_floatingLabel="highlight"
-                                app:met_primaryColor="@color/colorPrimary"
+                                app:met_primaryColor="?attr/colorPrimary"
                                 app:met_singleLineEllipsis="true" />
 
 
@@ -81,14 +83,27 @@
                                 android:id="@+id/password"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:layout_below="@+id/user_name"
+                                android:singleLine="true"
+                                android:ellipsize="end"
+                                android:textSize="12sp"
+                                android:maxLines="1"
                                 android:layout_marginStart="@dimen/tweenty_four_dp"
                                 android:layout_marginEnd="@dimen/tweenty_four_dp"
-                                android:hint="密码"
+                                android:hint="@string/string_10"
                                 android:inputType="textPassword"
                                 app:met_floatingLabel="highlight"
-                                app:met_primaryColor="@color/colorPrimary"
+                                app:met_primaryColor="?attr/colorPrimary"
                                 app:met_singleLineEllipsis="true" />
+
+                            <CheckBox
+                                android:layout_width="wrap_content"
+                                android:text="@string/string_358"
+                                android:id="@+id/show_pwd"
+                                android:layout_marginBottom="@dimen/sixteen_dp"
+                                android:layout_marginStart="18dp"
+                                android:layout_height="wrap_content">
+
+                            </CheckBox>
 
 
                             <androidx.cardview.widget.CardView
@@ -100,7 +115,7 @@
                                 android:layout_marginStart="@dimen/tweenty_four_dp"
                                 android:layout_marginEnd="@dimen/tweenty_four_dp"
                                 android:layout_marginBottom="@dimen/sixteen_dp"
-                                app:cardBackgroundColor="@color/colorPrimary">
+                                app:cardBackgroundColor="?attr/colorPrimary">
 
 
                                 <TextView
@@ -128,7 +143,7 @@
                         android:layout_below="@+id/center_rela"
                         android:id="@+id/has_no_account"
                         android:text="@string/has_no_account"
-                        android:textColor="@color/colorPrimary"
+                        android:textColor="?attr/colorPrimary"
                         android:textSize="12sp" />
 
 
@@ -144,7 +159,7 @@
             android:id="@+id/fragment_sign"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:background="@color/colorPrimary">
+            android:background="?attr/colorPrimary">
 
 
             <androidx.cardview.widget.CardView
@@ -154,7 +169,7 @@
                 android:foreground="?attr/selectableItemBackground"
                 android:id="@+id/card_sign"
                 app:cardBackgroundColor="@android:color/white"
-                app:cardCornerRadius="@dimen/six_dp"
+                app:cardCornerRadius="@dimen/twelve_dp"
                 app:cardElevation="@dimen/twelve_dp"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
@@ -175,8 +190,8 @@
                         android:layout_centerHorizontal="true"
                         android:gravity="center"
                         android:padding="@dimen/sixteen_dp"
-                        android:text="Shaft"
-                        android:textColor="@color/colorPrimary"
+                        android:text="@string/string_11"
+                        android:textColor="?attr/colorPrimary"
                         android:textSize="17sp"
                         android:textStyle="bold" />
 
@@ -197,9 +212,9 @@
                             android:layout_marginStart="@dimen/tweenty_four_dp"
                             android:layout_marginTop="@dimen/sixteen_dp"
                             android:layout_marginEnd="@dimen/tweenty_four_dp"
-                            android:hint="用户名（可随时变更）"
+                            android:hint="@string/string_12"
                             app:met_floatingLabel="highlight"
-                            app:met_primaryColor="@color/colorPrimary"
+                            app:met_primaryColor="?attr/colorPrimary"
                             app:met_singleLineEllipsis="true" />
 
 
@@ -216,7 +231,7 @@
                         android:layout_marginStart="@dimen/tweenty_four_dp"
                         android:layout_marginEnd="@dimen/tweenty_four_dp"
                         android:layout_marginBottom="@dimen/sixteen_dp"
-                        app:cardBackgroundColor="@color/colorPrimary">
+                        app:cardBackgroundColor="?attr/colorPrimary">
 
 
                         <TextView
@@ -237,7 +252,7 @@
                         android:gravity="center"
                         android:id="@+id/go_to_login"
                         android:text="@string/go_to_login"
-                        android:textColor="@color/colorPrimary"
+                        android:textColor="?attr/colorPrimary"
                         android:textSize="12sp" />
 
 
@@ -253,6 +268,7 @@
             android:id="@+id/progress"
             android:visibility="invisible"
             android:layout_height="wrap_content"
+            android:indeterminateTint="@color/always_white"
             app:layout_constraintBottom_toBottomOf="parent"
             android:layout_marginBottom="48dp"
             app:layout_constraintEnd_toEndOf="parent"
@@ -266,7 +282,7 @@
             android:theme="@style/AppTheme.AppBarOverlay"
             app:popupTheme="@style/AppTheme.PopupOverlay"
             android:id="@+id/toolbar"
-            android:background="@color/colorPrimary"
+            android:background="?attr/colorPrimary"
             android:layout_height="wrap_content">
 
 
@@ -275,3 +291,4 @@
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </layout>
+

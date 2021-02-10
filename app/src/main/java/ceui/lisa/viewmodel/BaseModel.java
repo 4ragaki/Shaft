@@ -1,37 +1,41 @@
 package ceui.lisa.viewmodel;
 
-import androidx.lifecycle.MutableLiveData;
+import android.content.Context;
+
 import androidx.lifecycle.ViewModel;
+
+import com.scwang.smartrefresh.layout.api.RefreshFooter;
+import com.scwang.smartrefresh.layout.api.RefreshHeader;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import ceui.lisa.activities.Shaft;
+import ceui.lisa.core.BaseRepo;
+import ceui.lisa.utils.Common;
 
 
-public class BaseModel<T> extends ViewModel {
+public class BaseModel<T> extends ViewModel{
 
-    private MutableLiveData<List<T>> content;
-    private String nextUrl = "";
-    private String token = "";
+    private List<T> content = null;
     private boolean isLoaded = false;
+    private BaseRepo mBaseRepo;
 
     public BaseModel() {
-        token = Shaft.sUserModel.getResponse().getAccess_token();
-        content = new MutableLiveData<>();
-        content.setValue(new ArrayList<>());
+        Common.showLog("trace 构造 000");
     }
 
-    public MutableLiveData<List<T>> getContent() {
+    public List<T> getContent() {
+        if (content == null) {
+            content = new ArrayList<>();
+        }
         return content;
     }
 
-    public void load(List<T> list) {
-        List<T> current = content.getValue();
-        if (current != null) {
-            current.addAll(list);
+    public void load(List<T> list, boolean isFresh) {
+        if (isFresh) {
+            content.clear();
         }
-        content.setValue(current);
+        content.addAll(list);
         isLoaded = true;
     }
 
@@ -39,19 +43,11 @@ public class BaseModel<T> extends ViewModel {
         return isLoaded;
     }
 
-    public String getNextUrl() {
-        return nextUrl;
+    public BaseRepo getBaseRepo() {
+        return mBaseRepo;
     }
 
-    public void setNextUrl(String nextUrl) {
-        this.nextUrl = nextUrl;
-    }
-
-    public String getToken() {
-        return token;
-    }
-
-    public void setToken(String token) {
-        this.token = token;
+    public void setBaseRepo(BaseRepo baseRepo) {
+        mBaseRepo = baseRepo;
     }
 }

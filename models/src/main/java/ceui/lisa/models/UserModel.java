@@ -4,11 +4,6 @@ import java.io.Serializable;
 
 public class UserModel implements Serializable, UserContainer {
 
-
-    /**
-     * response : {"access_token":"ECBLcZ9bp3xQ3IFK353yjn-Es6B4fNSPub21PCKx5x8","expires_in":3600,"token_type":"bearer","scope":"","refresh_token":"A5e2RuD2NcXwJ5t56D8ltuy_CCFG4UWyhmYCgeLq2kw","user":{"profile_image_urls":{"px_16x16":"https://i.pximg.net/user-profile/img/2018/06/20/23/27/47/14384932_69771f95cafdac1a1d3da88fcfe4ecab_16.jpg","px_50x50":"https://i.pximg.net/user-profile/img/2018/06/20/23/27/47/14384932_69771f95cafdac1a1d3da88fcfe4ecab_50.jpg","px_170x170":"https://i.pximg.net/user-profile/img/2018/06/20/23/27/47/14384932_69771f95cafdac1a1d3da88fcfe4ecab_170.jpg"},"id":"31655571","name":"details","account":"mercisbv","mail_address":"290071582@qq.com","is_premium":false,"x_restrict":2,"is_mail_authorized":true,"require_policy_agreement":false},"device_token":"520c73a6b5f7b93d5499878435fcb255"}
-     */
-
     private ResponseBean response;
 
     public ResponseBean getResponse() {
@@ -25,15 +20,6 @@ public class UserModel implements Serializable, UserContainer {
     }
 
     public static class ResponseBean implements Serializable {
-        /**
-         * access_token : ECBLcZ9bp3xQ3IFK353yjn-Es6B4fNSPub21PCKx5x8
-         * expires_in : 3600
-         * token_type : bearer
-         * scope :
-         * refresh_token : A5e2RuD2NcXwJ5t56D8ltuy_CCFG4UWyhmYCgeLq2kw
-         * user : {"profile_image_urls":{"px_16x16":"https://i.pximg.net/user-profile/img/2018/06/20/23/27/47/14384932_69771f95cafdac1a1d3da88fcfe4ecab_16.jpg","px_50x50":"https://i.pximg.net/user-profile/img/2018/06/20/23/27/47/14384932_69771f95cafdac1a1d3da88fcfe4ecab_50.jpg","px_170x170":"https://i.pximg.net/user-profile/img/2018/06/20/23/27/47/14384932_69771f95cafdac1a1d3da88fcfe4ecab_170.jpg"},"id":"31655571","name":"details","account":"mercisbv","mail_address":"290071582@qq.com","is_premium":false,"x_restrict":2,"is_mail_authorized":true,"require_policy_agreement":false}
-         * device_token : 520c73a6b5f7b93d5499878435fcb255
-         */
 
         private String access_token;
         private int expires_in;
@@ -45,7 +31,7 @@ public class UserModel implements Serializable, UserContainer {
         private String local_user;
 
         public String getAccess_token() {
-            return access_token;
+            return "Bearer " + access_token;
         }
 
         public void setAccess_token(String access_token) {
@@ -107,25 +93,5 @@ public class UserModel implements Serializable, UserContainer {
         public void setLocal_user(String local_user) {
             this.local_user = local_user;
         }
-
-        @Override
-        public String toString() {
-            return "ResponseBean{" +
-                    "access_token='" + access_token + '\'' +
-                    ", expires_in=" + expires_in +
-                    ", token_type='" + token_type + '\'' +
-                    ", scope='" + scope + '\'' +
-                    ", refresh_token='" + refresh_token + '\'' +
-                    ", user=" + user +
-                    ", device_token='" + device_token + '\'' +
-                    '}';
-        }
-    }
-
-    @Override
-    public String toString() {
-        return "UserModel{" +
-                "response=" + response +
-                '}';
     }
 }

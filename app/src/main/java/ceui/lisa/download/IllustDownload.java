@@ -1,267 +1,220 @@
 package ceui.lisa.download;
 
-import android.Manifest;
-import android.app.Activity;
+import android.content.Context;
+import android.content.Intent;
+import android.net.Uri;
+import android.text.TextUtils;
 
-import androidx.fragment.app.FragmentActivity;
+import androidx.core.content.FileProvider;
 
-import com.liulishuo.okdownload.DownloadTask;
-import com.liulishuo.okdownload.core.dispatcher.DownloadDispatcher;
-import com.tbruyelle.rxpermissions2.RxPermissions;
+import com.qmuiteam.qmui.skin.QMUISkinManager;
+import com.qmuiteam.qmui.widget.dialog.QMUIDialog;
+import com.qmuiteam.qmui.widget.dialog.QMUIDialogAction;
 
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
 import ceui.lisa.R;
+import ceui.lisa.activities.BaseActivity;
 import ceui.lisa.activities.Shaft;
-import ceui.lisa.database.IllustTask;
+import ceui.lisa.core.DownloadItem;
+import ceui.lisa.core.Manager;
+import ceui.lisa.feature.HostManager;
+import ceui.lisa.file.LegacyFile;
 import ceui.lisa.interfaces.Callback;
+import ceui.lisa.interfaces.FeedBack;
 import ceui.lisa.models.GifResponse;
 import ceui.lisa.models.IllustsBean;
 import ceui.lisa.utils.Common;
-import io.reactivex.disposables.Disposable;
+
+import static android.provider.DocumentsContract.EXTRA_INITIAL_URI;
 
 public class IllustDownload {
 
-    public static final String MAP_KEY = "Referer";
-    public static final String IMAGE_REFERER = "https://app-api.pixiv.net/";
+    public static void downloadIllust(IllustsBean illust, BaseActivity<?> activity) {
+        check(activity, () -> {
+            if (illust.getPage_count() == 1) {
+                DownloadItem item = new DownloadItem(illust, 0);
+                item.setUrl(getUrl(illust, 0));
+                item.setShowUrl(getShowUrl(illust, 0));
+                Common.showToast(1 + "个任务已经加入下载队列");
+                Manager.get().addTask(item, activity);
+            }
+        });
+    }
 
-    public static void downloadIllust(FragmentActivity activity, IllustsBean illustsBean) {
-        checkPermission(activity, new Callback<Object>() {
-            @Override
-            public void doSomething(Object t) {
-                if (illustsBean == null) {
-                    Common.showToast(Shaft.getContext().getString(R.string.cannot_download));
-                    return;
-                }
+    public static void downloadIllust(IllustsBean illust, Context context) {
+        if (illust.getPage_count() == 1) {
+            DownloadItem item = new DownloadItem(illust, 0);
+            item.setUrl(getUrl(illust, 0));
+            item.setShowUrl(getShowUrl(illust, 0));
+            Common.showToast(1 + "个任务已经加入下载队列");
+            Manager.get().addTask(item, context);
+        }
+    }
 
-                if (illustsBean.getPage_count() != 1) {
-                    Common.showToast(Shaft.getContext().getString(R.string.cannot_download));
-                    return;
-                }
-
-                File file = FileCreator.createIllustFile(illustsBean);
-                if (file.exists()) {
-                    Common.showToast(Shaft.getContext().getString(R.string.image_alredy_exist));
-                    return;
-                }
-
-
-                Common.showLog("Task url " + illustsBean.getMeta_single_page().getOriginal_image_url());
-                DownloadTask.Builder builder = new DownloadTask.Builder(illustsBean.getMeta_single_page().getOriginal_image_url(),
-                        file.getParentFile())
-                        .setFilename(file.getName())
-                        .setMinIntervalMillisCallbackProcess(30)
-                        .setPassIfAlreadyCompleted(false);
-                builder.addHeader(MAP_KEY, IMAGE_REFERER);
-                DownloadTask task = builder.build();
-                IllustTask illustTask = new IllustTask();
-                illustTask.setIllustsBean(illustsBean);
-                illustTask.setDownloadTask(task);
-                TaskQueue.get().addTask(illustTask);
-                task.enqueue(new DListener());
-                Common.showToast(Shaft.getContext().getString(R.string.one_item_added));
+    public static void downloadIllust(IllustsBean illust, int index, BaseActivity<?> activity) {
+        check(activity, () -> {
+            if (illust.getPage_count() == 1) {
+                downloadIllust(illust, activity);
+            } else {
+                DownloadItem item = new DownloadItem(illust, index);
+                item.setUrl(getUrl(illust, index));
+                item.setShowUrl(getShowUrl(illust, index));
+                Common.showToast(1 + "个任务已经加入下载队列");
+                Manager.get().addTask(item, activity);
             }
         });
     }
 
 
-    public static void downloadIllust(FragmentActivity activity, IllustsBean illustsBean, int index) {
-        checkPermission(activity, new Callback<Object>() {
-            @Override
-            public void doSomething(Object t) {
-                if (illustsBean == null) {
-                    Common.showToast(Shaft.getContext().getString(R.string.cannot_download));
-                    return;
+    public static void downloadAllIllust(IllustsBean illust, BaseActivity<?> activity) {
+        check(activity, () -> {
+            if (illust.getPage_count() == 1) {
+                downloadIllust(illust, activity);
+            } else {
+                List<DownloadItem> tempList = new ArrayList<>();
+                for (int i = 0; i < illust.getPage_count(); i++) {
+                    DownloadItem item = new DownloadItem(illust, i);
+                    item.setUrl(getUrl(illust, i));
+                    item.setShowUrl(getShowUrl(illust, i));
+                    tempList.add(item);
                 }
-
-                File file = FileCreator.createIllustFile(illustsBean, index);
-                if (file.exists()) {
-                    Common.showToast(Shaft.getContext().getString(R.string.image_alredy_exist));
-                    return;
-                }
-
-                if (illustsBean.getPage_count() == 1) {
-                    downloadIllust(activity, illustsBean);
-                } else {
-                    DownloadTask.Builder builder = new DownloadTask.Builder(
-                            illustsBean.getMeta_pages().get(index).getImage_urls().getOriginal(),
-                            file.getParentFile())
-                            .setFilename(file.getName())
-                            .setMinIntervalMillisCallbackProcess(30)
-                            .setPassIfAlreadyCompleted(false);
-                    builder.addHeader(MAP_KEY, IMAGE_REFERER);
-                    DownloadTask task = builder.build();
-                    IllustTask illustTask = new IllustTask();
-                    illustTask.setIllustsBean(illustsBean);
-                    illustTask.setDownloadTask(task);
-                    TaskQueue.get().addTask(illustTask);
-                    task.enqueue(new DListener());
-                    Common.showToast(Shaft.getContext().getString(R.string.one_item_added));
-                }
+                Common.showToast(tempList.size() + "个任务已经加入下载队列");
+                Manager.get().addTasks(tempList, activity);
             }
         });
     }
 
-
-    public static void downloadAllIllust(FragmentActivity activity, IllustsBean illustsBean) {
-        checkPermission(activity, new Callback<Object>() {
-            @Override
-            public void doSomething(Object t) {
-                if (illustsBean == null) {
-                    Common.showToast(Shaft.getContext().getString(R.string.cannot_download));
-                    return;
-                }
-
-                if (illustsBean.getPage_count() <= 1) {
-                    downloadIllust(activity, illustsBean);
-                    return;
-                }
-
-
-                List<DownloadTask> tempList = new ArrayList<>();
-
-                for (int i = 0; i < illustsBean.getPage_count(); i++) {
-                    File file = FileCreator.createIllustFile(illustsBean, i);
-                    if (!file.exists()) {
-                        DownloadTask.Builder builder = new DownloadTask.Builder(illustsBean.getMeta_pages().get(i).getImage_urls().getOriginal(),
-                                file.getParentFile())
-                                .setFilename(file.getName())
-                                .setMinIntervalMillisCallbackProcess(30)
-                                .setPassIfAlreadyCompleted(false);
-                        builder.addHeader(MAP_KEY, IMAGE_REFERER);
-                        final DownloadTask task = builder.build();
-                        tempList.add(task);
-
-                        IllustTask illustTask = new IllustTask();
-                        illustTask.setIllustsBean(illustsBean);
-                        illustTask.setDownloadTask(task);
-                        TaskQueue.get().addTask(illustTask);
-                    }
-                }
-
-                DownloadTask[] taskArray = new DownloadTask[tempList.size()];
-                DownloadTask.enqueue(tempList.toArray(taskArray), new DListener());
-                Common.showToast(tempList.size() + Shaft.getContext().getString(R.string.has_been_added));
+    public static void downloadAllIllust(IllustsBean illust, Context context) {
+        if (illust.getPage_count() == 1) {
+            downloadIllust(illust, context);
+        } else {
+            List<DownloadItem> tempList = new ArrayList<>();
+            for (int i = 0; i < illust.getPage_count(); i++) {
+                DownloadItem item = new DownloadItem(illust, i);
+                item.setUrl(getUrl(illust, i));
+                item.setShowUrl(getShowUrl(illust, i));
+                tempList.add(item);
             }
-        });
+            Common.showToast(tempList.size() + "个任务已经加入下载队列");
+            Manager.get().addTasks(tempList, context);
+        }
     }
 
 
-    public static void downloadAllIllust(FragmentActivity activity, List<IllustsBean> beans) {
-        checkPermission(activity, new Callback<Object>() {
-            @Override
-            public void doSomething(Object t) {
-                if (beans == null || beans.size() <= 0) {
-                    Common.showToast(Shaft.getContext().getString(R.string.cannot_download));
-                    return;
-                }
+    public static void downloadAllIllust(List<IllustsBean> beans, BaseActivity<?> activity) {
+        check(activity, () -> {
+            List<DownloadItem> tempList = new ArrayList<>();
+            for (int i = 0; i < beans.size(); i++) {
+                if (beans.get(i).isChecked()) {
+                    final IllustsBean illust = beans.get(i);
 
-                if (beans.size() == 1) {
-                    downloadAllIllust(activity, beans.get(0));
-                    return;
-                }
-
-
-                List<DownloadTask> tempList = new ArrayList<>();
-
-                for (int i = 0; i < beans.size(); i++) {
-                    if (beans.get(i).isChecked()) {
-                        final IllustsBean currentIllust = beans.get(i);
-
-                        if (currentIllust.getPage_count() == 1) {
-
-                            File file = FileCreator.createIllustFile(currentIllust);
-                            if (!file.exists()) {
-                                DownloadTask.Builder builder = new DownloadTask.Builder(
-                                        currentIllust.getMeta_single_page().getOriginal_image_url(),
-                                        file.getParentFile())
-                                        .setFilename(file.getName())
-                                        .setMinIntervalMillisCallbackProcess(30)
-                                        .setPassIfAlreadyCompleted(false);
-                                builder.addHeader(MAP_KEY, IMAGE_REFERER);
-                                final DownloadTask task = builder.build();
-                                tempList.add(task);
-
-                                IllustTask illustTask = new IllustTask();
-                                illustTask.setIllustsBean(currentIllust);
-                                illustTask.setDownloadTask(task);
-                                TaskQueue.get().addTask(illustTask);
-                            }
-                        } else {
-                            for (int j = 0; j < currentIllust.getPage_count(); j++) {
-
-                                File file = FileCreator.createIllustFile(currentIllust, j);
-                                if (!file.exists()) {
-                                    DownloadTask.Builder builder = new DownloadTask.Builder(
-                                            currentIllust.getMeta_pages().get(j).getImage_urls().getOriginal(),
-                                            file.getParentFile())
-                                            .setFilename(file.getName())
-                                            .setMinIntervalMillisCallbackProcess(30)
-                                            .setPassIfAlreadyCompleted(false);
-                                    builder.addHeader(MAP_KEY, IMAGE_REFERER);
-                                    final DownloadTask task = builder.build();
-                                    tempList.add(task);
-
-                                    IllustTask illustTask = new IllustTask();
-                                    illustTask.setIllustsBean(currentIllust);
-                                    illustTask.setDownloadTask(task);
-                                    TaskQueue.get().addTask(illustTask);
-                                }
-                            }
+                    if (illust.getPage_count() == 1) {
+                        DownloadItem item = new DownloadItem(illust, 0);
+                        item.setUrl(getUrl(illust, 0));
+                        item.setShowUrl(getShowUrl(illust, 0));
+                        tempList.add(item);
+                    } else {
+                        for (int j = 0; j < illust.getPage_count(); j++) {
+                            DownloadItem item = new DownloadItem(illust, j);
+                            item.setUrl(getUrl(illust, j));
+                            item.setShowUrl(getShowUrl(illust, j));
+                            tempList.add(item);
                         }
                     }
                 }
-
-                if (tempList.size() == 0) {
-                    return;
-                }
-
-
-                DownloadTask[] taskArray = new DownloadTask[tempList.size()];
-                DownloadTask.enqueue(tempList.toArray(taskArray), new DListener());
-                Common.showToast(tempList.size() + Shaft.getContext().getString(R.string.has_been_added));
             }
+            Common.showToast(tempList.size() + "个任务已经加入下载队列");
+            Manager.get().addTasks(tempList, activity);
         });
     }
 
-    public static void downloadGif(FragmentActivity activity, GifResponse response, IllustsBean allIllust, GifListener gifListener) {
-        checkPermission(activity, new Callback<Object>() {
+    public static void downloadGif(GifResponse response, IllustsBean illust, BaseActivity<?> activity) {
+        DownloadItem item = new DownloadItem(illust, 0);
+        item.setUrl(HostManager.get().replaceUrl(response.getUgoira_metadata().getZip_urls().getMedium()));
+        item.setShowUrl(HostManager.get().replaceUrl(illust.getImage_urls().getMedium()));
+        Manager.get().addTask(item, activity);
+    }
+
+    public static void downloadNovel(BaseActivity<?> activity, String displayName, String content, Callback<Uri> targetCallback) {
+        check(activity, new FeedBack() {
             @Override
-            public void doSomething(Object t) {
-                File file = FileCreator.createGifZipFile(allIllust);
-                DownloadTask.Builder builder = new DownloadTask.Builder(
-                        response.getUgoira_metadata().getZip_urls().getMedium(),
-                        file.getParentFile())
-                        .setFilename(file.getName())
-                        .setMinIntervalMillisCallbackProcess(30)
-                        .setPassIfAlreadyCompleted(true);
-                builder.addHeader(MAP_KEY, IMAGE_REFERER);
-                DownloadTask task = builder.build();
-
-                IllustTask illustTask = new IllustTask();
-                illustTask.setDownloadTask(task);
-                illustTask.setIllustsBean(allIllust);
-                GifQueue.get().addTask(illustTask);
-                task.enqueue(gifListener);
-                Common.showToast("图组ZIP已加入下载队列");
+            public void doSomething() {
+                File textFile = new LegacyFile().textFile(activity, displayName);
+                try {
+                    OutputStream outStream = new FileOutputStream(textFile);
+                    outStream.write(content.getBytes());
+                    outStream.close();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                Uri photoURI = FileProvider.getUriForFile(activity,
+                        activity.getApplicationContext().getPackageName() + ".provider", textFile);
+                if (targetCallback != null) {
+                    targetCallback.doSomething(photoURI);
+                }
             }
         });
     }
 
-    private static void checkPermission(FragmentActivity mActivity, Callback<?> callback) {
-        final RxPermissions rxPermissions = new RxPermissions(mActivity);
-        Disposable disposable = rxPermissions
-                .requestEachCombined(
-                        Manifest.permission.WRITE_EXTERNAL_STORAGE
-                )
-                .subscribe(permission -> {
-                    if (permission.granted) {
-                        callback.doSomething(null);
-                    } else {
-                        Common.showToast(mActivity.getString(R.string.access_denied));
-                    }
-                });
+    public static String getUrl(IllustsBean illust, int index) {
+        if (illust.getPage_count() == 1) {
+            return HostManager.get().replaceUrl(illust.getMeta_single_page().getOriginal_image_url());
+        } else {
+            return HostManager.get().replaceUrl(illust.getMeta_pages().get(index).getImage_urls().getOriginal());
+        }
+    }
+
+    public static String getShowUrl(IllustsBean illust, int index) {
+        if (illust.getPage_count() == 1) {
+            return illust.getImage_urls().getMedium();
+        } else {
+            return illust.getMeta_pages().get(index).getImage_urls().getMedium();
+        }
+    }
+
+    public static void check(BaseActivity<?> activity, FeedBack feedBack) {
+        if (Common.isAndroidQ() && TextUtils.isEmpty(Shaft.sSettings.getRootPathUri()) && false) {
+            activity.setFeedBack(feedBack);
+            new QMUIDialog.MessageDialogBuilder(activity)
+                    .setTitle(activity.getResources().getString(R.string.string_143))
+                    .setMessage(activity.getResources().getString(R.string.string_313))
+                    .setSkinManager(QMUISkinManager.defaultInstance(activity))
+                    .addAction(0, activity.getResources().getString(R.string.string_142),
+                            QMUIDialogAction.ACTION_PROP_NEGATIVE,
+                            (dialog, index) -> dialog.dismiss())
+                    .addAction(0, activity.getResources().getString(R.string.string_312),
+                            (dialog, index) -> {
+                                try {
+                                    new Thread(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
+                                            Uri start;
+                                            if (!TextUtils.isEmpty(Shaft.sSettings.getRootPathUri())) {
+                                                start = Uri.parse(Shaft.sSettings.getRootPathUri());
+                                            } else {
+                                                start = Uri.parse("content://com.android.externalstorage.documents/document/primary:Download");
+                                            }
+                                            intent.putExtra(EXTRA_INITIAL_URI, start);
+                                            activity.startActivityForResult(intent, BaseActivity.ASK_URI);
+                                        }
+                                    }).start();
+                                } catch (Exception e) {
+                                    Common.showToast(e.toString());
+                                    e.printStackTrace();
+                                }
+                                dialog.dismiss();
+                            })
+                    .show();
+        } else {
+            if (feedBack != null) {
+                feedBack.doSomething();
+            }
+        }
     }
 }

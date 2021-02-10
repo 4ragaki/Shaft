@@ -18,11 +18,12 @@ import androidx.fragment.app.FragmentPagerAdapter;
 import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 
+import com.blankj.utilcode.util.BarUtils;
 import com.mxn.soul.flowingdrawer_core.ElasticDrawer;
 
 import ceui.lisa.R;
-import ceui.lisa.databinding.FragmentNewSearchBinding;
 import ceui.lisa.fragments.BaseFragment;
+import ceui.lisa.databinding.FragmentNewSearchBinding;
 import ceui.lisa.fragments.FragmentFilter;
 import ceui.lisa.fragments.FragmentSearchIllust;
 import ceui.lisa.fragments.FragmentSearchNovel;
@@ -30,12 +31,9 @@ import ceui.lisa.utils.Common;
 import ceui.lisa.utils.Params;
 import ceui.lisa.viewmodel.SearchModel;
 
-import static ceui.lisa.activities.Shaft.sUserModel;
-
 public class SearchActivity extends BaseActivity<FragmentNewSearchBinding> {
 
-    private static final String[] TITLES = new String[]{"插画/漫画", "小说"};
-    private BaseFragment[] allPages = new BaseFragment[]{null, null};
+    private final BaseFragment<?>[] allPages = new BaseFragment[]{null, null, null};
     private String keyWord = "";
     private SearchModel searchModel;
     private int index = 0;
@@ -61,6 +59,11 @@ public class SearchActivity extends BaseActivity<FragmentNewSearchBinding> {
 
     @Override
     protected void initView() {
+        final String[] TITLES = new String[]{
+                getString(R.string.string_136),
+                getString(R.string.string_137),
+                getString(R.string.string_138)
+        };
         baseBind.searchBox.setText(keyWord);
         baseBind.viewPager.setAdapter(new FragmentPagerAdapter(getSupportFragmentManager(), 0) {
             @NonNull
@@ -68,8 +71,10 @@ public class SearchActivity extends BaseActivity<FragmentNewSearchBinding> {
             public Fragment getItem(int position) {
                 if (allPages[position] == null) {
                     if (position == 0) {
-                        allPages[position] = FragmentSearchIllust.newInstance();
-                    } else  {
+                        allPages[position] = FragmentSearchIllust.newInstance(false);
+                    } else if (position == 1) {
+                        allPages[position] = FragmentSearchIllust.newInstance(true);
+                    } else {
                         allPages[position] = FragmentSearchNovel.newInstance();
                     }
                 }
@@ -137,7 +142,7 @@ public class SearchActivity extends BaseActivity<FragmentNewSearchBinding> {
             @Override
             public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
                 if (TextUtils.isEmpty(baseBind.searchBox.getText().toString())) {
-                    Common.showToast("请输入搜索内容");
+                    Common.showToast(getString(R.string.string_139));
                     return false;
                 }
                 searchModel.getNowGo().setValue("search_now");
@@ -147,7 +152,7 @@ public class SearchActivity extends BaseActivity<FragmentNewSearchBinding> {
         });
 
         baseBind.drawerlayout.setTouchMode(ElasticDrawer.TOUCH_MODE_BEZEL);
-        FragmentFilter fragmentFilter = FragmentFilter.newInstance();
+        FragmentFilter fragmentFilter = new FragmentFilter();
         FragmentManager fragmentManager = getSupportFragmentManager();
         if (!fragmentFilter.isAdded()) {
             fragmentManager.beginTransaction()

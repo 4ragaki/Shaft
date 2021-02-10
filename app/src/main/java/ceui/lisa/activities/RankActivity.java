@@ -6,29 +6,23 @@ import android.view.Menu;
 import android.view.MenuItem;
 
 import androidx.annotation.Nullable;
-import androidx.appcompat.widget.Toolbar;
 import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentStatePagerAdapter;
-import androidx.viewpager.widget.ViewPager;
+import androidx.fragment.app.FragmentPagerAdapter;
 
 import com.ToxicBakery.viewpager.transforms.DrawerTransformer;
-import com.google.android.material.tabs.TabLayout;
 import com.wdullaer.materialdatetimepicker.date.DatePickerDialog;
 
 import java.util.Calendar;
 
 import ceui.lisa.R;
+import ceui.lisa.databinding.ActivityMultiViewPagerBinding;
 import ceui.lisa.fragments.FragmentRankIllust;
 import ceui.lisa.fragments.FragmentRankNovel;
-import ceui.lisa.fragments.NetListFragment;
 import ceui.lisa.utils.Common;
 
-public class RankActivity extends BaseActivity implements DatePickerDialog.OnDateSetListener {
+public class RankActivity extends BaseActivity<ActivityMultiViewPagerBinding> implements
+        DatePickerDialog.OnDateSetListener {
 
-    private static final String[] CHINESE_TITLES_MANGA = new String[]{"日榜", "每周", "每月", "新人", "R"};
-    private static final String[] CHINESE_TITLES_NOVEL = new String[]{"日榜", "每周", "男性向", "女性向", "新人", "R"};
-    private ViewPager mViewPager;
-    private NetListFragment[] allPages = new NetListFragment[]{null, null, null, null, null, null, null, null};
     private String dataType = "";
     private String queryDate = "";
 
@@ -39,14 +33,12 @@ public class RankActivity extends BaseActivity implements DatePickerDialog.OnDat
 
     @Override
     protected void initView() {
-        Toolbar toolbar = findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
-        toolbar.setNavigationOnClickListener(v -> finish());
-        TabLayout tabLayout = findViewById(R.id.tab_layout);
+        setSupportActionBar(baseBind.toolbar);
+        baseBind.toolbar.setNavigationOnClickListener(v -> finish());
+        baseBind.toolbarTitle.setText("排行榜");
         dataType = getIntent().getStringExtra("dataType");
-        mViewPager = findViewById(R.id.view_pager);
         queryDate = getIntent().getStringExtra("date");
-        mViewPager.setPageTransformer(true, new DrawerTransformer());
+        baseBind.viewPager.setPageTransformer(true, new DrawerTransformer());
 
         final String[] CHINESE_TITLES = new String[]{
                 mContext.getString(R.string.daily_rank),
@@ -56,23 +48,40 @@ public class RankActivity extends BaseActivity implements DatePickerDialog.OnDat
                 mContext.getString(R.string.woman_like),
                 mContext.getString(R.string.self_done),
                 mContext.getString(R.string.new_fish),
-                mContext.getString(R.string.r_eighteen)
+                mContext.getString(R.string.r_eighteen),
+                mContext.getString(R.string.r_eighteen_weekly_rank),
+                mContext.getString(R.string.r_eighteen_male_rank),
+                mContext.getString(R.string.r_eighteen_female_rank)
         };
 
+        final String[] CHINESE_TITLES_MANGA = new String[]{
+                getString(R.string.string_124),
+                getString(R.string.string_125),
+                getString(R.string.string_126),
+                getString(R.string.string_127),
+                getString(R.string.string_128)
+        };
+        final String[] CHINESE_TITLES_NOVEL = new String[]{
+                getString(R.string.string_129),
+                getString(R.string.string_130),
+                getString(R.string.string_131),
+                getString(R.string.string_132),
+                getString(R.string.string_133),
+                getString(R.string.string_134)
+        };
 
-        mViewPager.setAdapter(new FragmentStatePagerAdapter(getSupportFragmentManager()) {
+        baseBind.viewPager.setAdapter(new FragmentPagerAdapter(getSupportFragmentManager()) {
             @Override
             public Fragment getItem(int i) {
-                if (allPages[i] == null) {
-                    if ("插画".equals(dataType)) {
-                        allPages[i] = FragmentRankIllust.newInstance(i, queryDate, false);
-                    } else if ("漫画".equals(dataType)) {
-                        allPages[i] = FragmentRankIllust.newInstance(i, queryDate, true);
-                    } else if ("小说".equals(dataType)) {
-                        allPages[i] = FragmentRankNovel.newInstance(i, queryDate);
-                    }
+                if ("插画".equals(dataType)) {
+                    return FragmentRankIllust.newInstance(i, queryDate, false);
+                } else if ("漫画".equals(dataType)) {
+                    return FragmentRankIllust.newInstance(i, queryDate, true);
+                } else if ("小说".equals(dataType)) {
+                    return FragmentRankNovel.newInstance(i, queryDate);
+                } else {
+                    return new Fragment();
                 }
-                return allPages[i];
             }
 
             @Override
@@ -102,16 +111,15 @@ public class RankActivity extends BaseActivity implements DatePickerDialog.OnDat
 
 
         });
-        tabLayout.setupWithViewPager(mViewPager);
+        baseBind.tabLayout.setupWithViewPager(baseBind.viewPager);
         //如果指定了跳转到某一个排行，就显示该页排行
         if (getIntent().getIntExtra("index", 0) >= 0) {
-            mViewPager.setCurrentItem(getIntent().getIntExtra("index", 0));
+            baseBind.viewPager.setCurrentItem(getIntent().getIntExtra("index", 0));
         }
     }
 
     @Override
     protected void initData() {
-
     }
 
     @Override
@@ -132,7 +140,7 @@ public class RankActivity extends BaseActivity implements DatePickerDialog.OnDat
                         RankActivity.this,
                         Integer.parseInt(t[0]), // Initial year selection
                         Integer.parseInt(t[1]) - 1, // Initial month selection
-                        Integer.parseInt(t[2]) - 1 // Inital day selection
+                        Integer.parseInt(t[2]) // Inital day selection
                 );
             } else {
                 dpd = DatePickerDialog.newInstance(
@@ -146,7 +154,8 @@ public class RankActivity extends BaseActivity implements DatePickerDialog.OnDat
             start.set(2008, 1, 1);
             dpd.setMinDate(start);
             dpd.setMaxDate(now);
-            dpd.setAccentColor(getResources().getColor(R.color.colorPrimary));
+            dpd.setAccentColor(Common.resolveThemeAttribute(mContext, R.attr.colorPrimary));
+            dpd.setThemeDark(mContext.getResources().getBoolean(R.bool.is_night_mode));
             dpd.show(getFragmentManager(), "DatePickerDialog");
             return true;
         }
@@ -160,8 +169,13 @@ public class RankActivity extends BaseActivity implements DatePickerDialog.OnDat
         Intent intent = new Intent(mContext, RankActivity.class);
         intent.putExtra("date", date);
         intent.putExtra("dataType", dataType);
-        intent.putExtra("index", mViewPager.getCurrentItem());
+        intent.putExtra("index", baseBind.viewPager.getCurrentItem());
         startActivity(intent);
         finish();
+    }
+
+    @Override
+    public boolean hideStatusBar() {
+        return false;
     }
 }

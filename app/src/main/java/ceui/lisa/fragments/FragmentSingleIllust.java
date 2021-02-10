@@ -1,6 +1,8 @@
 package ceui.lisa.fragments;
 
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.res.Configuration;
 import android.os.Bundle;
 import android.text.SpannableString;
@@ -12,36 +14,29 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import androidx.appcompat.widget.Toolbar;
-import androidx.core.app.ActivityOptionsCompat;
-import androidx.lifecycle.ViewModelProvider;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import com.bumptech.glide.Glide;
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.scwang.smartrefresh.layout.footer.FalsifyFooter;
 import com.scwang.smartrefresh.layout.header.FalsifyHeader;
 
-import org.greenrobot.eventbus.Subscribe;
-import org.greenrobot.eventbus.ThreadMode;
-
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
 import ceui.lisa.R;
-import ceui.lisa.activities.ImageDetailActivity;
+import ceui.lisa.activities.BaseActivity;
 import ceui.lisa.activities.SearchActivity;
 import ceui.lisa.activities.Shaft;
 import ceui.lisa.activities.TemplateActivity;
-import ceui.lisa.activities.UActivity;
+import ceui.lisa.activities.UserActivity;
 import ceui.lisa.adapters.IllustDetailAdapter;
 import ceui.lisa.databinding.FragmentSingleIllustBinding;
 import ceui.lisa.dialogs.MuteDialog;
 import ceui.lisa.download.FileCreator;
-import ceui.lisa.download.GifCreate;
 import ceui.lisa.download.IllustDownload;
-import ceui.lisa.interfaces.OnItemClickListener;
 import ceui.lisa.models.IllustsBean;
-import ceui.lisa.utils.Channel;
+import ceui.lisa.notification.BaseReceiver;
+import ceui.lisa.notification.CallBackReceiver;
 import ceui.lisa.utils.Common;
 import ceui.lisa.utils.DensityUtil;
 import ceui.lisa.utils.GlideUtil;
@@ -50,11 +45,9 @@ import ceui.lisa.utils.PixivOperate;
 import ceui.lisa.utils.ShareIllust;
 import ceui.lisa.view.LinearItemDecorationNoLRTB;
 import ceui.lisa.view.ScrollChange;
-import ceui.lisa.viewmodel.Dust;
 import jp.wasabeef.glide.transformations.BlurTransformation;
 import me.next.tagview.TagCloudView;
 
-import static ceui.lisa.activities.Shaft.sUserModel;
 import static com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions.withCrossFade;
 import static com.bumptech.glide.request.RequestOptions.bitmapTransform;
 
@@ -65,12 +58,11 @@ public class FragmentSingleIllust extends BaseFragment<FragmentSingleIllustBindi
 
     private IllustsBean illust;
     private IllustDetailAdapter mDetailAdapter;
-    private int index;
+    private CallBackReceiver mReceiver;
 
-    public static FragmentSingleIllust newInstance(int index) {
-        Common.showLog("FragmentSingleIllust " + " newInstance " + index);
+    public static FragmentSingleIllust newInstance(IllustsBean illust) {
         Bundle args = new Bundle();
-        args.putInt(Params.INDEX, index);
+        args.putSerializable(Params.CONTENT, illust);
         FragmentSingleIllust fragment = new FragmentSingleIllust();
         fragment.setArguments(args);
         return fragment;
@@ -78,7 +70,7 @@ public class FragmentSingleIllust extends BaseFragment<FragmentSingleIllustBindi
 
     @Override
     public void initBundle(Bundle bundle) {
-        index = bundle.getInt(Params.INDEX);
+        illust = (IllustsBean) bundle.getSerializable(Params.CONTENT);
     }
 
     @Override
@@ -104,59 +96,67 @@ public class FragmentSingleIllust extends BaseFragment<FragmentSingleIllustBindi
 
 
         mDetailAdapter = new IllustDetailAdapter(illust, mActivity);
-        mDetailAdapter.setOnItemClickListener(new OnItemClickListener() {
-            @Override
-            public void onItemClick(View v, int position, int viewType) {
-                if (viewType == 0) {
-                    Intent intent = new Intent(mContext, ImageDetailActivity.class);
-                    intent.putExtra("illust", illust);
-                    intent.putExtra("dataType", "二级详情");
-                    intent.putExtra("index", position);
-                    if (Shaft.sSettings.isFirstImageSize()) {
-                        mActivity.startActivity(intent);
-                    } else {
-                        if (mDetailAdapter.getHasLoad().get(position)) {
-                            Bundle bundle = ActivityOptionsCompat.makeSceneTransitionAnimation(mActivity,
-                                    v, "big_image_" + position).toBundle();
-                            startActivity(intent, bundle);
-                        } else {
-                            mActivity.startActivity(intent);
-                        }
-                    }
-                } else if (viewType == 1) {
-
-                }
-            }
-        });
         baseBind.recyclerView.setAdapter(mDetailAdapter);
     }
 
     @Override
-    void initData() {
+    protected void initData() {
         if (illust != null) {
             loadImage();
         }
+
+        IntentFilter intentFilter = new IntentFilter();
+        mReceiver = new CallBackReceiver(new BaseReceiver.CallBack() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                Bundle bundle = intent.getExtras();
+                if (bundle != null) {
+                    int id = bundle.getInt(Params.ID);
+                    if (illust.getId() == id) {
+                        boolean isLiked = bundle.getBoolean(Params.IS_LIKED);
+                        if (isLiked) {
+                            illust.setIs_bookmarked(true);
+                            baseBind.postLike.setImageResource(R.drawable.ic_favorite_red_24dp);
+                        } else {
+                            illust.setIs_bookmarked(false);
+                            baseBind.postLike.setImageResource(R.drawable.ic_favorite_grey_24dp);
+                        }
+                    }
+                }
+            }
+        });
+        intentFilter.addAction(Params.LIKED_ILLUST);
+        LocalBroadcastManager.getInstance(mContext).registerReceiver(mReceiver, intentFilter);
     }
 
     @Override
-    public void initView(View view) {
-        Dust dust = new ViewModelProvider(requireActivity()).get(Dust.class);
-        if (dust == null || dust.getDust() == null ||
-                dust.getDust().getValue() == null || dust.getDust().getValue().size() == 0) {
-            mActivity.finish();
+    public void onDestroy() {
+        if (mReceiver != null) {
+            LocalBroadcastManager.getInstance(mContext).unregisterReceiver(mReceiver);
+        }
+        super.onDestroy();
+    }
+
+    @Override
+    public void initView() {
+        if (illust == null) {
             return;
         }
-        illust = dust.getDust().getValue().get(index);
 
-        if (illust == null || illust.getId() == 0) {
+        baseBind.toolbar.setNavigationOnClickListener(v -> mActivity.finish());
+
+        if (illust.getId() == 0 || !illust.isVisible()) {
+            Common.showToast(R.string.string_206);
+            baseBind.refreshLayout.setVisibility(View.INVISIBLE);
+            finish();
             return;
         }
 
+        baseBind.refreshLayout.setVisibility(View.VISIBLE);
         baseBind.refreshLayout.setEnableLoadMore(true);
         baseBind.refreshLayout.setRefreshHeader(new FalsifyHeader(mContext));
         baseBind.refreshLayout.setRefreshFooter(new FalsifyFooter(mContext));
-        baseBind.toolbar.setTitle(illust.getTitle() + "  ");
-        baseBind.toolbar.setNavigationOnClickListener(v -> mActivity.finish());
+        baseBind.toolbar.setTitle(illust.getTitle());
 
         baseBind.toolbar.inflateMenu(R.menu.share);
         baseBind.toolbar.setOnMenuItemClickListener(new Toolbar.OnMenuItemClickListener() {
@@ -168,45 +168,23 @@ public class FragmentSingleIllust extends BaseFragment<FragmentSingleIllustBindi
                         public void onPrepare() {
 
                         }
-
-                        @Override
-                        public void onExecuteSuccess(Void aVoid) {
-
-                        }
-
-                        @Override
-                        public void onExecuteFail(Exception e) {
-
-                        }
                     }.execute();
                     return true;
                 } else if (menuItem.getItemId() == R.id.action_dislike) {
                     MuteDialog muteDialog = MuteDialog.newInstance(illust);
                     muteDialog.show(getChildFragmentManager(), "MuteDialog");
-                } else if (menuItem.getItemId() == R.id.action_preview) {
-                    Intent intent = new Intent(mContext, TemplateActivity.class);
-                    intent.putExtra(TemplateActivity.EXTRA_FRAGMENT, "开发者预览");
-                    startActivity(intent);
                 }
                 return false;
             }
         });
 
         baseBind.download.setOnClickListener(v -> {
-            if (illust.isGif()) {
-                GifCreate.createGif(illust);
+            if (illust.getPage_count() == 1) {
+                IllustDownload.downloadIllust(illust, (BaseActivity<?>) mContext);
             } else {
-                if (illust.getPage_count() == 1) {
-                    IllustDownload.downloadIllust(mActivity, illust);
-                } else {
-                    IllustDownload.downloadAllIllust(mActivity, illust);
-                }
+                IllustDownload.downloadAllIllust(illust, (BaseActivity<?>) mContext);
             }
         });
-        File file = FileCreator.createIllustFile(illust);
-        if (file.exists()) {
-            baseBind.download.setImageResource(R.drawable.ic_has_download);
-        }
         baseBind.userName.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
             public boolean onLongClick(View v) {
@@ -256,25 +234,28 @@ public class FragmentSingleIllust extends BaseFragment<FragmentSingleIllustBindi
                 } else {
                     baseBind.postLike.setImageResource(R.drawable.ic_favorite_accent_24dp);
                 }
-                PixivOperate.postLike(illust, sUserModel, FragmentLikeIllust.TYPE_PUBLUC);
+                if (Shaft.sSettings.isPrivateStar()) {
+                    PixivOperate.postLike(illust, Params.TYPE_PRIVATE);
+                } else {
+                    PixivOperate.postLike(illust, Params.TYPE_PUBLUC);
+                }
             }
         });
         baseBind.postLike.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
             public boolean onLongClick(View v) {
-                if (!illust.isIs_bookmarked()) {
-                    Intent intent = new Intent(mContext, TemplateActivity.class);
-                    intent.putExtra(Params.ILLUST_ID, illust.getId());
-                    intent.putExtra(TemplateActivity.EXTRA_FRAGMENT, "按标签收藏");
-                    startActivity(intent);
-                }
+                Intent intent = new Intent(mContext, TemplateActivity.class);
+                intent.putExtra(Params.ILLUST_ID, illust.getId());
+                intent.putExtra(Params.LAST_CLASS, getClass().getSimpleName());
+                intent.putExtra(TemplateActivity.EXTRA_FRAGMENT, "按标签收藏");
+                startActivity(intent);
                 return true;
             }
         });
         baseBind.userHead.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(mContext, UActivity.class);
+                Intent intent = new Intent(mContext, UserActivity.class);
                 intent.putExtra(Params.USER_ID, illust.getUser().getId());
                 startActivity(intent);
             }
@@ -282,7 +263,7 @@ public class FragmentSingleIllust extends BaseFragment<FragmentSingleIllustBindi
         baseBind.userName.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(mContext, UActivity.class);
+                Intent intent = new Intent(mContext, UserActivity.class);
                 intent.putExtra(Params.USER_ID, illust.getUser().getId());
                 startActivity(intent);
             }
@@ -297,7 +278,7 @@ public class FragmentSingleIllust extends BaseFragment<FragmentSingleIllustBindi
                     illust.getUser().setIs_followed(false);
                 } else {
                     baseBind.follow.setText("取消关注");
-                    PixivOperate.postFollowUser(illust.getUser().getId(), FragmentLikeIllust.TYPE_PUBLUC);
+                    PixivOperate.postFollowUser(illust.getUser().getId(), Params.TYPE_PUBLUC);
                     illust.getUser().setIs_followed(true);
                 }
             }
@@ -309,25 +290,28 @@ public class FragmentSingleIllust extends BaseFragment<FragmentSingleIllustBindi
             } else {
                 baseBind.follow.setText("取消关注");
                 illust.getUser().setIs_followed(true);
-                PixivOperate.postFollowUser(illust.getUser().getId(), FragmentLikeIllust.TYPE_PRIVATE);
+                PixivOperate.postFollowUser(illust.getUser().getId(), Params.TYPE_PRIVATE);
             }
             return true;
         });
 
         Glide.with(mContext)
-                .load(GlideUtil.getMediumImg(illust.getUser().getProfile_image_urls().getMedium()))
+                .load(GlideUtil.getUrl(illust.getUser().getProfile_image_urls().getMedium()))
                 .into(baseBind.userHead);
 
         baseBind.userName.setText(illust.getUser().getName());
 
         SpannableString sizeString = new SpannableString(String.format("尺寸：%s",
                 illust.getSize()));
-        sizeString.setSpan(new ForegroundColorSpan(mContext.getResources().getColor(R.color.colorPrimary)),
+        sizeString.setSpan(new ForegroundColorSpan(R.attr.colorPrimary),
                 3, illust.getSize().length() + 3, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         baseBind.illustPx.setText(sizeString);
         List<String> tags = new ArrayList<>();
         for (int i = 0; i < illust.getTags().size(); i++) {
             String temp = illust.getTags().get(i).getName();
+            if (!TextUtils.isEmpty(illust.getTags().get(i).getTranslated_name())) {
+                temp = temp + "/" + illust.getTags().get(i).getTranslated_name();
+            }
             tags.add(temp);
         }
         baseBind.illustTag.setOnTagClickListener(new TagCloudView.OnTagClickListener() {
@@ -364,7 +348,7 @@ public class FragmentSingleIllust extends BaseFragment<FragmentSingleIllustBindi
 
         SpannableString userString = new SpannableString(String.format("用户ID：%s",
                 String.valueOf(illust.getUser().getId())));
-        userString.setSpan(new ForegroundColorSpan(mContext.getResources().getColor(R.color.colorPrimary)),
+        userString.setSpan(new ForegroundColorSpan(R.attr.colorPrimary),
                 5, String.valueOf(illust.getUser().getId()).length() + 5, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         baseBind.userId.setText(userString);
         baseBind.userId.setOnClickListener(new View.OnClickListener() {
@@ -375,7 +359,7 @@ public class FragmentSingleIllust extends BaseFragment<FragmentSingleIllustBindi
         });
         SpannableString illustString = new SpannableString(String.format("作品ID：%s",
                 String.valueOf(illust.getId())));
-        illustString.setSpan(new ForegroundColorSpan(mContext.getResources().getColor(R.color.colorPrimary)),
+        illustString.setSpan(new ForegroundColorSpan(R.attr.colorPrimary),
                 5, String.valueOf(illust.getId()).length() + 5, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         baseBind.illustId.setText(illustString);
         baseBind.illustId.setOnClickListener(new View.OnClickListener() {
@@ -391,7 +375,7 @@ public class FragmentSingleIllust extends BaseFragment<FragmentSingleIllustBindi
             baseBind.illustList.open();
         } else {
             baseBind.pSize.setVisibility(View.VISIBLE);
-            baseBind.pSize.setText(illust.getPage_count() + "P");
+            baseBind.pSize.setText(String.format("%dP", illust.getPage_count()));
             baseBind.darkBlank.setVisibility(View.VISIBLE);
             baseBind.seeAll.setVisibility(View.VISIBLE);
             baseBind.illustList.close();
@@ -411,11 +395,18 @@ public class FragmentSingleIllust extends BaseFragment<FragmentSingleIllustBindi
     }
 
     @Override
-    public void onPause() {
-        super.onPause();
-        //如果是GIF，停止播放
-        if (illust != null && "ugoira".equals(illust.getType()) && mDetailAdapter != null) {
-            mDetailAdapter.nowStopGif();
+    public void onResume() {
+        super.onResume();
+        checkDownload();
+    }
+
+    private void checkDownload() {
+        if (illust.getPage_count() == 1) {
+            if (FileCreator.isExist(illust, 0)) {
+                baseBind.download.setImageResource(R.drawable.ic_has_download);
+            } else {
+                baseBind.download.setImageResource(R.drawable.ic_file_download_black_24dp);
+            }
         }
     }
 
@@ -434,41 +425,5 @@ public class FragmentSingleIllust extends BaseFragment<FragmentSingleIllustBindi
         ViewGroup.LayoutParams headParams = baseBind.head.getLayoutParams();
         headParams.height = Shaft.statusHeight * 3 / 5 + Shaft.toolbarHeight;
         baseBind.head.setLayoutParams(headParams);
-    }
-
-    @Override
-    public void setUserVisibleHint(boolean isVisibleToUser) {
-        super.setUserVisibleHint(isVisibleToUser);
-        if (illust != null) {
-            if (isVisibleToUser) {
-                if ("ugoira".equals(illust.getType()) && mDetailAdapter != null) {
-                    mDetailAdapter.nowPlayGif();
-                }
-            } else {
-                if ("ugoira".equals(illust.getType()) && mDetailAdapter != null) {
-                    mDetailAdapter.nowStopGif();
-                }
-            }
-        }
-    }
-
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    public void onMessageEvent(Channel event) {
-        if (event.getReceiver().contains("FragmentSingleIllust starIllust")) {
-            illust.setIs_bookmarked(true);
-            ((FloatingActionButton) parentView.findViewById(R.id.post_like))
-                    .setImageResource(R.drawable.ic_favorite_accent_24dp);
-        }
-
-        if (event.getReceiver().equals("FragmentSingleIllust download finish")) {
-            if ((int) event.getObject() == illust.getId()) {
-                baseBind.download.setImageResource(R.drawable.ic_has_download);
-            }
-        }
-    }
-
-    @Override
-    public boolean eventBusEnable() {
-        return true;
     }
 }

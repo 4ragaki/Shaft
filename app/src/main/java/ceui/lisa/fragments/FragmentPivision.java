@@ -13,16 +13,13 @@ import ceui.lisa.adapters.BaseAdapter;
 import ceui.lisa.core.RemoteRepo;
 import ceui.lisa.databinding.FragmentBaseListBinding;
 import ceui.lisa.databinding.RecyArticalBinding;
-import ceui.lisa.http.Retro;
 import ceui.lisa.interfaces.OnItemClickListener;
 import ceui.lisa.model.ListArticle;
 import ceui.lisa.models.SpotlightArticlesBean;
+import ceui.lisa.repo.PivisionRepo;
 import ceui.lisa.utils.DensityUtil;
 import ceui.lisa.utils.Params;
 import ceui.lisa.view.LinearItemDecoration;
-import io.reactivex.Observable;
-
-import static ceui.lisa.activities.Shaft.sUserModel;
 
 public class FragmentPivision extends NetListFragment<FragmentBaseListBinding,
         ListArticle, SpotlightArticlesBean> {
@@ -49,16 +46,10 @@ public class FragmentPivision extends NetListFragment<FragmentBaseListBinding,
 
     @Override
     public RemoteRepo<ListArticle> repository() {
-        return new RemoteRepo<ListArticle>() {
+        return new PivisionRepo(dataType, false){
             @Override
-            public Observable<ListArticle> initApi() {
-                return Retro.getAppApi().getArticles(sUserModel.getResponse().getAccess_token(), dataType);
-            }
-
-            @Override
-            public Observable<ListArticle> initNextApi() {
-                return Retro.getAppApi().getNextArticals(
-                        sUserModel.getResponse().getAccess_token(), mModel.getNextUrl());
+            public boolean localData() {
+                return false;
             }
         };
     }
@@ -72,6 +63,7 @@ public class FragmentPivision extends NetListFragment<FragmentBaseListBinding,
                 intent.putExtra(TemplateActivity.EXTRA_FRAGMENT, "网页链接");
                 intent.putExtra(Params.URL, allItems.get(position).getArticle_url());
                 intent.putExtra(Params.TITLE, getString(R.string.pixiv_special));
+                intent.putExtra(Params.PREFER_PRESERVE, true);
                 startActivity(intent);
             }
         });

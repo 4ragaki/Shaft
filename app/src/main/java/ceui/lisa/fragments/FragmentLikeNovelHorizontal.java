@@ -7,7 +7,6 @@ import android.view.ViewGroup;
 import android.view.animation.AlphaAnimation;
 import android.view.animation.Animation;
 
-import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.PagerSnapHelper;
 
@@ -23,11 +22,9 @@ import ceui.lisa.http.Retro;
 import ceui.lisa.interfaces.OnItemClickListener;
 import ceui.lisa.model.ListNovel;
 import ceui.lisa.models.NovelBean;
-import ceui.lisa.models.UserDetailResponse;
 import ceui.lisa.utils.DensityUtil;
 import ceui.lisa.utils.Params;
 import ceui.lisa.view.LinearItemHorizontalDecoration;
-import ceui.lisa.viewmodel.UserViewModel;
 import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.schedulers.Schedulers;
@@ -66,13 +63,13 @@ public class FragmentLikeNovelHorizontal extends BaseFragment<FragmentLikeIllust
     }
 
     @Override
-    public void initView(View view) {
+    public void initView() {
         baseBind.progress.setVisibility(View.INVISIBLE);
         baseBind.rootParentView.setVisibility(View.GONE);
         baseBind.recyclerView.addItemDecoration(new
                 LinearItemHorizontalDecoration(DensityUtil.dp2px(8.0f)));
         if (type == 1) {
-            baseBind.title.setText("小说作品");
+            baseBind.title.setText(R.string.string_168);
             baseBind.howMany.setText(String.format(getString(R.string.how_many_illust_works), novelSize));
             baseBind.howMany.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -84,8 +81,8 @@ public class FragmentLikeNovelHorizontal extends BaseFragment<FragmentLikeIllust
                 }
             });
         } else if (type == 0) {
-            baseBind.title.setText("小说收藏");
-            baseBind.howMany.setText("查看全部");
+            baseBind.title.setText(R.string.string_166);
+            baseBind.howMany.setText(R.string.string_167);
             baseBind.howMany.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
@@ -123,11 +120,11 @@ public class FragmentLikeNovelHorizontal extends BaseFragment<FragmentLikeIllust
     }
 
     @Override
-    void initData() {
+    protected void initData() {
         Observable<ListNovel> mApi;
         if (type == 0) {
             mApi = Retro.getAppApi().getUserLikeNovel(sUserModel.getResponse().getAccess_token(),
-                    userID, FragmentLikeIllust.TYPE_PUBLUC);
+                    userID, Params.TYPE_PUBLUC);
         } else {
             mApi = Retro.getAppApi().getUserSubmitNovel(sUserModel.getResponse().getAccess_token(),
                     userID);

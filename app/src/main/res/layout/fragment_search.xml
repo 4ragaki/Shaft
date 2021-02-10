@@ -8,7 +8,7 @@
 
     <RelativeLayout
         android:layout_width="match_parent"
-        android:background="@color/white"
+        android:background="@color/fragment_center"
         android:id="@+id/base_parent"
         android:layout_height="match_parent">
 
@@ -16,7 +16,7 @@
             android:orientation="vertical"
             android:id="@+id/top_rela"
             android:layout_width="match_parent"
-            android:background="@color/colorPrimary"
+            android:background="?attr/colorPrimary"
             android:layout_height="wrap_content">
 
             <ImageView
@@ -37,8 +37,12 @@
                     android:layout_marginStart="@dimen/sixteen_dp"
                     android:drawableStart="@drawable/ic_search_grey_24dp"
                     android:paddingStart="@dimen/twelve_dp"
+                    android:paddingEnd="36dp"
+                    android:ellipsize="end"
                     android:drawablePadding="@dimen/six_dp"
+                    android:maxLines="1"
                     android:textSize="14sp"
+                    android:textColor="@color/rank_text_color"
                     android:imeOptions="actionSearch"
                     android:singleLine="true"
                     android:layout_toStartOf="@+id/more"
@@ -47,7 +51,8 @@
                     android:layout_marginTop="@dimen/twelve_dp"
                     android:layout_marginBottom="@dimen/twelve_dp"
                     android:background="@drawable/search_et_bg"
-                    android:layout_height="36dp">
+                    android:layout_height="36dp"
+                    android:inputType="text">
 
 
                 </EditText>
@@ -68,7 +73,7 @@
 
 
                 <TextView
-                    android:text="切换"
+                    android:text="@string/string_86"
                     android:layout_width="wrap_content"
                     android:layout_centerVertical="true"
                     android:textColor="@color/white"
@@ -112,7 +117,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginStart="@dimen/sixteen_dp"
                             android:layout_marginTop="@dimen/tweenty_four_dp"
-                            android:text="搜索历史"
+                            android:text="@string/string_87"
                             android:textColor="@color/second_text_color"
                             android:textSize="14sp">
 
@@ -126,7 +131,7 @@
                             android:layout_alignParentEnd="true"
                             android:textSize="14sp"
                             android:id="@+id/clear_history"
-                            android:textColor="@color/colorPrimary"
+                            android:textColor="?attr/colorPrimary"
                             android:layout_marginEnd="@dimen/sixteen_dp"
                             android:layout_marginTop="@dimen/tweenty_four_dp"
                             android:layout_marginBottom="@dimen/eight_dp"
@@ -153,7 +158,7 @@
 
                     <TextView
                         android:layout_width="wrap_content"
-                        android:text="搜索发现"
+                        android:text="@string/string_88"
                         android:id="@+id/fuck"
                         android:textSize="14sp"
                         android:textColor="@color/second_text_color"
@@ -187,10 +192,11 @@
                 android:layout_width="match_parent"
                 android:id="@+id/hint_list"
                 android:visibility="gone"
-                android:background="@color/white"
+                android:background="@color/fragment_center"
                 android:layout_height="wrap_content">
 
             </androidx.recyclerview.widget.RecyclerView>
         </FrameLayout>
     </RelativeLayout>
 </layout>
+

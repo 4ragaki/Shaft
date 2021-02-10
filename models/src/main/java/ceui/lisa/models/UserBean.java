@@ -1,10 +1,8 @@
 package ceui.lisa.models;
 
-import android.text.TextUtils;
-
 import java.io.Serializable;
 
-public class UserBean implements Serializable, UserContainer {
+public class UserBean implements Serializable, UserContainer, Starable {
     /**
      * profile_image_urls : {"px_16x16":"https://i.pximg.net/user-profile/img/2018/06/20/23/27/47/14384932_69771f95cafdac1a1d3da88fcfe4ecab_16.jpg","px_50x50":"https://i.pximg.net/user-profile/img/2018/06/20/23/27/47/14384932_69771f95cafdac1a1d3da88fcfe4ecab_50.jpg","px_170x170":"https://i.pximg.net/user-profile/img/2018/06/20/23/27/47/14384932_69771f95cafdac1a1d3da88fcfe4ecab_170.jpg"}
      * id : 31655571
@@ -149,73 +147,24 @@ public class UserBean implements Serializable, UserContainer {
         return id;
     }
 
-    public static class ProfileImageUrlsBean implements Serializable {
-        /**
-         * px_16x16 : https://i.pximg.net/user-profile/img/2018/06/20/23/27/47/14384932_69771f95cafdac1a1d3da88fcfe4ecab_16.jpg
-         * px_50x50 : https://i.pximg.net/user-profile/img/2018/06/20/23/27/47/14384932_69771f95cafdac1a1d3da88fcfe4ecab_50.jpg
-         * px_170x170 : https://i.pximg.net/user-profile/img/2018/06/20/23/27/47/14384932_69771f95cafdac1a1d3da88fcfe4ecab_170.jpg
-         */
+    @Override
+    public int getItemID() {
+        return getId();
+    }
 
-        private String px_16x16;
-        private String px_50x50;
-        private String px_170x170;
-        private String medium;
+    @Override
+    public void setItemID(int id) {
+        setId(id);
+    }
 
-        public String getMedium() {
-            return medium;
-        }
+    @Override
+    public boolean isItemStared() {
+        return isIs_followed();
+    }
 
-        public void setMedium(String medium) {
-            this.medium = medium;
-        }
-
-        public String getPx_16x16() {
-            return px_16x16;
-        }
-
-        public void setPx_16x16(String px_16x16) {
-            this.px_16x16 = px_16x16;
-        }
-
-        public String getPx_50x50() {
-            return px_50x50;
-        }
-
-        public void setPx_50x50(String px_50x50) {
-            this.px_50x50 = px_50x50;
-        }
-
-        public String getPx_170x170() {
-            return px_170x170;
-        }
-
-        public void setPx_170x170(String px_170x170) {
-            this.px_170x170 = px_170x170;
-        }
-
-        public String getMaxImage() {
-            if (!TextUtils.isEmpty(px_170x170)) {
-                return px_170x170;
-            } else if (!TextUtils.isEmpty(medium)) {
-                return medium;
-            } else if (!TextUtils.isEmpty(px_50x50)) {
-                return px_50x50;
-            } else if (!TextUtils.isEmpty(px_16x16)) {
-                return px_16x16;
-            } else {
-                return "";
-            }
-        }
-
-        @Override
-        public String toString() {
-            return "ProfileImageUrlsBean{" +
-                    "px_16x16='" + px_16x16 + '\'' +
-                    ", px_50x50='" + px_50x50 + '\'' +
-                    ", px_170x170='" + px_170x170 + '\'' +
-                    ", medium='" + medium + '\'' +
-                    '}';
-        }
+    @Override
+    public void setItemStared(boolean isLiked) {
+        setIs_followed(isLiked);
     }
 
     @Override
@@ -228,6 +177,7 @@ public class UserBean implements Serializable, UserContainer {
                 ", account='" + account + '\'' +
                 ", password='" + password + '\'' +
                 ", mail_address='" + mail_address + '\'' +
+                ", is_login=" + is_login +
                 ", is_premium=" + is_premium +
                 ", is_followed=" + is_followed +
                 ", lastTokenTime=" + lastTokenTime +

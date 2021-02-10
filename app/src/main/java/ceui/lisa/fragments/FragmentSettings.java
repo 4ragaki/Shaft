@@ -1,84 +1,75 @@
 package ceui.lisa.fragments;
 
-import android.app.Activity;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.net.Uri;
-import android.os.Environment;
 import android.view.View;
 import android.widget.CompoundButton;
-import android.widget.LinearLayout;
 
-import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import com.blankj.utilcode.util.FileUtils;
 import com.blankj.utilcode.util.LanguageUtils;
-import com.facebook.rebound.SimpleSpringListener;
-import com.facebook.rebound.Spring;
-import com.facebook.rebound.SpringChain;
-import com.nononsenseapps.filepicker.FilePickerActivity;
-import com.nononsenseapps.filepicker.Utils;
+import com.qmuiteam.qmui.skin.QMUISkinManager;
+import com.qmuiteam.qmui.widget.dialog.QMUIDialog;
+import com.qmuiteam.qmui.widget.dialog.QMUIDialogAction;
+import com.scwang.smartrefresh.layout.SmartRefreshLayout;
 import com.scwang.smartrefresh.layout.footer.FalsifyFooter;
 import com.scwang.smartrefresh.layout.header.FalsifyHeader;
 
-import org.greenrobot.eventbus.EventBus;
-
-import java.io.File;
-import java.util.List;
 import java.util.Locale;
 
 import ceui.lisa.R;
 import ceui.lisa.activities.Shaft;
 import ceui.lisa.activities.TemplateActivity;
+import ceui.lisa.core.Manager;
 import ceui.lisa.databinding.FragmentSettingsBinding;
+import ceui.lisa.feature.HostManager;
+import ceui.lisa.file.LegacyFile;
 import ceui.lisa.helper.ThemeHelper;
-import ceui.lisa.utils.Channel;
 import ceui.lisa.utils.Common;
 import ceui.lisa.utils.Local;
 import ceui.lisa.utils.Params;
 
-import static ceui.lisa.fragments.FragmentFilter.ALL_SIZE;
 import static ceui.lisa.fragments.FragmentFilter.ALL_SIZE_VALUE;
-import static ceui.lisa.fragments.FragmentFilter.THEME_NAME;
 import static ceui.lisa.utils.Settings.ALL_LANGUAGE;
 
 
-public class FragmentSettings extends BaseFragment<FragmentSettingsBinding> {
-
-    private static final int illustPath_CODE = 10086;
-    private static final int gifResultPath_CODE = 10087;
-    private static final int gifZipPath_CODE = 10088;
-    private static final int gifUnzipPath_CODE = 10089;
-    private boolean shouldRefreshFragmentRight = false;
+public class FragmentSettings extends SwipeFragment<FragmentSettingsBinding> {
 
     @Override
     public void initLayout() {
         mLayoutID = R.layout.fragment_settings;
     }
 
-    public static FragmentSettings newInstance() {
-        return new FragmentSettings();
-    }
-
     @Override
-    void initData() {
+    protected void initData() {
         baseBind.toolbar.setNavigationOnClickListener(view -> mActivity.finish());
-        animate(baseBind.parentLinear);
+        Common.animate(baseBind.parentLinear);
 
         baseBind.loginOut.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                new AlertDialog.Builder(mContext)
-                        .setTitle(getString(R.string.login_out) + "?")
-                        .setPositiveButton(R.string.login_out, new DialogInterface.OnClickListener() {
+                new QMUIDialog.CheckBoxMessageDialogBuilder(getActivity())
+                        .setTitle(getString(R.string.string_185))
+                        .setMessage(getString(R.string.string_186))
+                        .setChecked(true)
+                        .setSkinManager(QMUISkinManager.defaultInstance(mContext))
+                        .addAction(getString(R.string.string_187), new QMUIDialogAction.ActionListener() {
                             @Override
-                            public void onClick(DialogInterface dialog, int which) {
-                                Common.logOut(mContext);
-                                mActivity.finish();
+                            public void onClick(QMUIDialog dialog, int index) {
+                                dialog.dismiss();
                             }
                         })
-                        .setNegativeButton(android.R.string.cancel, null)
+                        .addAction(R.string.login_out, new QMUIDialogAction.ActionListener() {
+                            @Override
+                            public void onClick(QMUIDialog dialog, int index) {
+                                Common.logOut(mContext);
+                                mActivity.finish();
+                                dialog.dismiss();
+                            }
+                        })
+                        .create()
                         .show();
             }
         });
@@ -110,6 +101,15 @@ public class FragmentSettings extends BaseFragment<FragmentSettingsBinding> {
             }
         });
 
+        baseBind.workSpace.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(mContext, TemplateActivity.class);
+                intent.putExtra(TemplateActivity.EXTRA_FRAGMENT, "我的作业环境");
+                startActivity(intent);
+            }
+        });
+
         baseBind.saveHistory.setChecked(Shaft.sSettings.isSaveViewHistory());
         baseBind.saveHistory.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
@@ -119,7 +119,7 @@ public class FragmentSettings extends BaseFragment<FragmentSettingsBinding> {
                 } else {
                     Shaft.sSettings.setSaveViewHistory(false);
                 }
-                Common.showToast("设置成功", baseBind.saveHistory);
+                Common.showToast("设置成功", 2);
                 Local.setSettings(Shaft.sSettings);
             }
         });
@@ -130,37 +130,12 @@ public class FragmentSettings extends BaseFragment<FragmentSettingsBinding> {
             }
         });
 
-        shouldRefreshFragmentRight = Shaft.sSettings.isDoubleStaggerData();
-        baseBind.staggerData.setChecked(Shaft.sSettings.isDoubleStaggerData());
-        baseBind.staggerData.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if (isChecked) {
-                    Shaft.sSettings.setDoubleStaggerData(true);
-                } else {
-                    Shaft.sSettings.setDoubleStaggerData(false);
-                }
-                Common.showToast("设置成功", baseBind.staggerData);
-                Local.setSettings(Shaft.sSettings);
-            }
-        });
-        baseBind.staggerDataRela.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                baseBind.staggerData.performClick();
-            }
-        });
-
-        baseBind.showLikeButton.setChecked(Shaft.sSettings.isShowLikeButton());
+        baseBind.showLikeButton.setChecked(Shaft.sSettings.isPrivateStar());
         baseBind.showLikeButton.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if (isChecked) {
-                    Shaft.sSettings.setShowLikeButton(true);
-                } else {
-                    Shaft.sSettings.setShowLikeButton(false);
-                }
-                Common.showToast("重启APP生效", baseBind.showLikeButton);
+                Shaft.sSettings.setPrivateStar(isChecked);
+                Common.showToast("设置成功", 2);
                 Local.setSettings(Shaft.sSettings);
             }
         });
@@ -171,23 +146,99 @@ public class FragmentSettings extends BaseFragment<FragmentSettingsBinding> {
             }
         });
 
-        baseBind.relatedNoLimit.setChecked(Shaft.sSettings.isRelatedIllustNoLimit());
-        baseBind.relatedNoLimit.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+        baseBind.illustDetailUserNew.setChecked(Shaft.sSettings.isUseFragmentIllust());
+        baseBind.illustDetailUserNew.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 if (isChecked) {
-                    Shaft.sSettings.setRelatedIllustNoLimit(true);
+                    Shaft.sSettings.setUseFragmentIllust(true);
                 } else {
-                    Shaft.sSettings.setRelatedIllustNoLimit(false);
+                    Shaft.sSettings.setUseFragmentIllust(false);
                 }
-                Common.showToast("设置成功", baseBind.relatedNoLimit);
+                Common.showToast("设置成功", 2);
                 Local.setSettings(Shaft.sSettings);
             }
         });
-        baseBind.relatedNoLimitRela.setOnClickListener(new View.OnClickListener() {
+        baseBind.illustDetailUserNewRela.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                baseBind.relatedNoLimit.performClick();
+                baseBind.illustDetailUserNew.performClick();
+            }
+        });
+
+        baseBind.userNewUser.setChecked(Shaft.sSettings.isUseNewUserPage());
+        baseBind.userNewUser.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                Shaft.sSettings.setUseNewUserPage(isChecked);
+                Common.showToast("设置成功", 2);
+                Local.setSettings(Shaft.sSettings);
+            }
+        });
+        baseBind.userNewUserRela.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                baseBind.userNewUser.performClick();
+            }
+        });
+
+        baseBind.deleteStarIllust.setChecked(Shaft.sSettings.isDeleteStarIllust());
+        baseBind.deleteStarIllust.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if (isChecked) {
+                    Shaft.sSettings.setDeleteStarIllust(true);
+                } else {
+                    Shaft.sSettings.setDeleteStarIllust(false);
+                }
+                Common.showToast("设置成功", 2);
+                Local.setSettings(Shaft.sSettings);
+            }
+        });
+        baseBind.deleteStarIllustRela.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                baseBind.deleteStarIllust.performClick();
+            }
+        });
+
+        setOrderName();
+        baseBind.orderSelect.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                final int index = Shaft.sSettings.getBottomBarOrder();
+                String[] ORDER_NAME = new String[]{
+                        getString(R.string.string_343),
+                        getString(R.string.string_344),
+                        getString(R.string.string_345),
+                        getString(R.string.string_346),
+                        getString(R.string.string_347),
+                        getString(R.string.string_348),
+                };
+                new QMUIDialog.CheckableDialogBuilder(mActivity)
+                        .setCheckedIndex(index)
+                        .setSkinManager(QMUISkinManager.defaultInstance(mContext))
+                        .addItems(ORDER_NAME, new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                if (which == index) {
+                                    Common.showLog("什么也不做");
+                                } else {
+                                    Shaft.sSettings.setBottomBarOrder(which);
+                                    baseBind.orderSelect.setText(ORDER_NAME[which]);
+                                    Local.setSettings(Shaft.sSettings);
+                                    Common.showToast(getString(R.string.please_restart_app));
+                                }
+                                dialog.dismiss();
+                            }
+                        })
+                        .show();
+            }
+        });
+        baseBind.bottomBarOrderRela.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                baseBind.orderSelect.performClick();
             }
         });
 
@@ -200,7 +251,7 @@ public class FragmentSettings extends BaseFragment<FragmentSettingsBinding> {
                 } else {
                     Shaft.sSettings.setAutoFuckChina(false);
                 }
-                Common.showToast("设置成功", baseBind.autoDns);
+                Common.showToast("设置成功", 2);
                 Local.setSettings(Shaft.sSettings);
             }
         });
@@ -211,16 +262,16 @@ public class FragmentSettings extends BaseFragment<FragmentSettingsBinding> {
             }
         });
 
-        baseBind.firstDetailOrigin.setChecked(Shaft.sSettings.isFirstImageSize());
+        baseBind.firstDetailOrigin.setChecked(Shaft.sSettings.isUsePixivCat());
         baseBind.firstDetailOrigin.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 if (isChecked) {
-                    Shaft.sSettings.setFirstImageSize(true);
+                    Shaft.sSettings.setUsePixivCat(true);
                 } else {
-                    Shaft.sSettings.setFirstImageSize(false);
+                    Shaft.sSettings.setUsePixivCat(false);
                 }
-                Common.showToast("设置成功", baseBind.firstDetailOrigin);
+                Common.showToast("设置成功");
                 Local.setSettings(Shaft.sSettings);
             }
         });
@@ -231,49 +282,45 @@ public class FragmentSettings extends BaseFragment<FragmentSettingsBinding> {
             }
         });
 
-        baseBind.illustPath.setText(Shaft.sSettings.getIllustPath());
-        baseBind.illustPath.setOnClickListener(new View.OnClickListener() {
+        baseBind.r18DivideSave.setChecked(Shaft.sSettings.isR18DivideSave());
+        baseBind.r18DivideSave.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                Shaft.sSettings.setR18DivideSave(isChecked);
+                Common.showToast("设置成功");
+                Local.setSettings(Shaft.sSettings);
+            }
+        });
+        baseBind.r18DivideSaveRela.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent i = new Intent(mContext, FilePickerActivity.class);
-                // This works if you defined the intent filter
-                // Intent i = new Intent(Intent.ACTION_GET_CONTENT);
-
-                // Set these depending on your use case. These are the defaults.
-                i.putExtra(FilePickerActivity.EXTRA_ALLOW_MULTIPLE, false);
-                i.putExtra(FilePickerActivity.EXTRA_ALLOW_CREATE_DIR, true);
-                i.putExtra(FilePickerActivity.EXTRA_MODE, FilePickerActivity.MODE_DIR);
-
-                // Configure initial directory by specifying a String.
-                // You could specify a String like "/storage/emulated/0/", but that can
-                // dangerous. Always use Android's API calls to get paths to the SD-card or
-                // internal memory.
-                i.putExtra(FilePickerActivity.EXTRA_START_PATH, Environment.getExternalStorageDirectory().getPath());
-
-                startActivityForResult(i, illustPath_CODE);
+                baseBind.r18DivideSave.performClick();
             }
         });
 
-        baseBind.gifResult.setText(Shaft.sSettings.getGifResultPath());
-        baseBind.gifResult.setOnClickListener(new View.OnClickListener() {
+        //是否显示原图
+        baseBind.showOriginalImage.setChecked(Shaft.sSettings.isShowOriginalImage());
+        baseBind.showOriginalImage.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                Shaft.sSettings.setShowOriginalImage(isChecked);
+                Common.showToast("设置成功");
+                Local.setSettings(Shaft.sSettings);
+            }
+        });
+        baseBind.showOriginalImageRela.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent i = new Intent(mContext, FilePickerActivity.class);
-                // This works if you defined the intent filter
-                // Intent i = new Intent(Intent.ACTION_GET_CONTENT);
+                baseBind.showOriginalImage.performClick();
+            }
+        });
 
-                // Set these depending on your use case. These are the defaults.
-                i.putExtra(FilePickerActivity.EXTRA_ALLOW_MULTIPLE, false);
-                i.putExtra(FilePickerActivity.EXTRA_ALLOW_CREATE_DIR, true);
-                i.putExtra(FilePickerActivity.EXTRA_MODE, FilePickerActivity.MODE_DIR);
 
-                // Configure initial directory by specifying a String.
-                // You could specify a String like "/storage/emulated/0/", but that can
-                // dangerous. Always use Android's API calls to get paths to the SD-card or
-                // internal memory.
-                i.putExtra(FilePickerActivity.EXTRA_START_PATH, Environment.getExternalStorageDirectory().getPath());
-
-                startActivityForResult(i, gifResultPath_CODE);
+        baseBind.illustPath.setText(Shaft.sSettings.getIllustPath());
+        baseBind.singleIllustPath.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Common.showToast(getString(R.string.string_329), true);
             }
         });
 
@@ -292,47 +339,69 @@ public class FragmentSettings extends BaseFragment<FragmentSettingsBinding> {
         baseBind.searchFilterRela.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                AlertDialog.Builder builder = new AlertDialog.Builder(mContext);
-                builder.setTitle("被收藏数");
-                builder.setItems(ALL_SIZE, new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        Shaft.sSettings.setSearchFilter(ALL_SIZE_VALUE[which]);
-                        Common.showToast("设置成功", baseBind.searchFilter);
-                        Local.setSettings(Shaft.sSettings);
-                        baseBind.searchFilter.setText(ALL_SIZE[which]);
-                    }
-                });
-                AlertDialog alertDialog = builder.create();
-                alertDialog.show();
+                String[] ALL_SIZE = new String[]{
+                        getString(R.string.string_289),
+                        getString(R.string.string_290),
+                        getString(R.string.string_291),
+                        getString(R.string.string_292),
+                        getString(R.string.string_293),
+                        getString(R.string.string_294),
+                        getString(R.string.string_295),
+                        getString(R.string.string_296),
+                        getString(R.string.string_297)
+                };
+                new QMUIDialog.CheckableDialogBuilder(mContext)
+                        .setSkinManager(QMUISkinManager.defaultInstance(mContext))
+                        .addItems(ALL_SIZE, new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                Shaft.sSettings.setSearchFilter(ALL_SIZE_VALUE[which]);
+                                Common.showToast("设置成功", 2);
+                                Local.setSettings(Shaft.sSettings);
+                                baseBind.searchFilter.setText(ALL_SIZE[which]);
+                                dialog.dismiss();
+                            }
+                        })
+                        .create()
+                        .show();
             }
         });
         baseBind.appLanguage.setText(Shaft.sSettings.getAppLanguage());
         baseBind.appLanguageRela.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                AlertDialog.Builder builder = new AlertDialog.Builder(mContext);
-                builder.setTitle(getString(R.string.language));
-                builder.setItems(ALL_LANGUAGE, new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        Shaft.sSettings.setAppLanguage(ALL_LANGUAGE[which]);
-                        baseBind.appLanguage.setText(ALL_LANGUAGE[which]);
-                        Common.showToast("设置成功", baseBind.appLanguage);
-                        Local.setSettings(Shaft.sSettings);
-                        if (which == 0) {
-                            LanguageUtils.applyLanguage(Locale.SIMPLIFIED_CHINESE, "");
-                        } else if (which == 1) {
-                            LanguageUtils.applyLanguage(Locale.JAPAN, "");
-                        } else if (which == 2) {
-                            LanguageUtils.applyLanguage(Locale.US, "");
-                        } else if (which == 3) {
-                            LanguageUtils.applyLanguage(Locale.TRADITIONAL_CHINESE, "");
-                        }
-                    }
-                });
-                AlertDialog alertDialog = builder.create();
-                alertDialog.show();
+                new QMUIDialog.CheckableDialogBuilder(getActivity())
+                        .addItems(ALL_LANGUAGE, new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                Shaft.sSettings.setAppLanguage(ALL_LANGUAGE[which]);
+                                baseBind.appLanguage.setText(ALL_LANGUAGE[which]);
+                                Common.showToast("设置成功", 2);
+                                Local.setSettings(Shaft.sSettings);
+                                if (which == 0) {
+                                    LanguageUtils.applyLanguage(Locale.SIMPLIFIED_CHINESE, "");
+                                } else if (which == 1) {
+                                    LanguageUtils.applyLanguage(Locale.JAPAN, "");
+                                } else if (which == 2) {
+                                    LanguageUtils.applyLanguage(Locale.US, "");
+                                } else if (which == 3) {
+                                    LanguageUtils.applyLanguage(Locale.TRADITIONAL_CHINESE, "");
+                                } else if (which == 4) {
+                                    LanguageUtils.applyLanguage(new Locale("RU", "ru", ""), "");
+                                }
+                                dialog.dismiss();
+                            }
+                        })
+                        .show();
+            }
+        });
+
+        baseBind.fileNameRela.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(mContext, TemplateActivity.class);
+                intent.putExtra(TemplateActivity.EXTRA_FRAGMENT, "修改命名方式");
+                startActivity(intent);
             }
         });
 
@@ -340,116 +409,125 @@ public class FragmentSettings extends BaseFragment<FragmentSettingsBinding> {
         baseBind.themeModeRela.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                AlertDialog.Builder builder = new AlertDialog.Builder(mContext);
-                builder.setTitle(getString(R.string.theme_mode));
-                final int index = ThemeHelper.getThemeType();
-                builder.setSingleChoiceItems(THEME_NAME, index, new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        if (which == index) {
-                            Common.showLog("什么也不做");
-                        } else {
-                            Shaft.sSettings.setThemeType(((AppCompatActivity) mActivity), THEME_NAME[which]);
-                            baseBind.themeMode.setText(THEME_NAME[which]);
-                            Local.setSettings(Shaft.sSettings);
-                        }
-                        dialog.dismiss();
-                    }
-                });
-                AlertDialog alertDialog = builder.create();
-                alertDialog.show();
+                final int index = ThemeHelper.getThemeType(mContext);
+                String[] THEME_NAME = new String[]{
+                        getString(R.string.string_298),
+                        getString(R.string.string_299),
+                        getString(R.string.string_300)
+                };
+                new QMUIDialog.CheckableDialogBuilder(mActivity)
+                        .setCheckedIndex(index)
+                        .setSkinManager(QMUISkinManager.defaultInstance(mContext))
+                        .addItems(THEME_NAME, new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                if (which == index) {
+                                    Common.showLog("什么也不做");
+                                } else {
+                                    Shaft.sSettings.setThemeType(((AppCompatActivity) mActivity), THEME_NAME[which]);
+                                    baseBind.themeMode.setText(THEME_NAME[which]);
+                                    Local.setSettings(Shaft.sSettings);
+                                }
+                                dialog.dismiss();
+                            }
+                        })
+                        .show();
             }
         });
 
 
+        baseBind.lineCount.setText(getString(R.string.string_349, Shaft.sSettings.getLineCount()));
+        baseBind.lineCountRela.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                int index = 0;
+                if (Shaft.sSettings.getLineCount() == 3) {
+                    index = 1;
+                } else if (Shaft.sSettings.getLineCount() == 4) {
+                    index = 2;
+                }
+                String[] LINE_COUNT = new String[]{
+                        "2列",
+                        "3列",
+                        "4列"
+                };
+                final int selectIndex = index;
+                new QMUIDialog.CheckableDialogBuilder(mActivity)
+                        .setCheckedIndex(index)
+                        .setSkinManager(QMUISkinManager.defaultInstance(mContext))
+                        .addItems(LINE_COUNT, new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                if (which == selectIndex) {
+                                    Common.showLog("什么也不做");
+                                } else {
+                                    int lineCount = which + 2;
+                                    Shaft.sSettings.setLineCount(lineCount);
+                                    baseBind.lineCount.setText(getString(R.string.string_349, lineCount));
+                                    Local.setSettings(Shaft.sSettings);
+                                    Common.showToast("重启APP生效", 2);
+                                }
+                                dialog.dismiss();
+                            }
+                        })
+                        .show();
+            }
+        });
+
+
+        setThemeName();
+        baseBind.colorSelectRela.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(mContext, TemplateActivity.class);
+                intent.putExtra(TemplateActivity.EXTRA_FRAGMENT, "主题颜色");
+                startActivity(intent);
+            }
+        });
+
+        baseBind.imageCacheSize.setText(FileUtils.getSize(new LegacyFile().imageCacheFolder(mContext)));
+        baseBind.clearImageCache.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                FileUtils.deleteAllInDir(new LegacyFile().imageCacheFolder(mContext));
+                Common.showToast("图片缓存清除成功！");
+                baseBind.imageCacheSize.setText(FileUtils.getSize(new LegacyFile().imageCacheFolder(mContext)));
+            }
+        });
+
+        baseBind.gifCacheSize.setText(FileUtils.getSize(new LegacyFile().gifCacheFolder(mContext)));
         baseBind.clearGifCache.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
+                FileUtils.deleteAllInDir(new LegacyFile().gifCacheFolder(mContext));
+                Common.showToast("GIF缓存清除成功！");
+                baseBind.gifCacheSize.setText(FileUtils.getSize(new LegacyFile().gifCacheFolder(mContext)));
             }
         });
         baseBind.refreshLayout.setRefreshHeader(new FalsifyHeader(mContext));
         baseBind.refreshLayout.setRefreshFooter(new FalsifyFooter(mContext));
-
-//        baseBind.fullscreenLayout.setChecked(Shaft.sSettings.isFullscreenLayout());
-//        baseBind.fullscreenLayout.setOnCheckedChangeListener((buttonView, isChecked) -> {
-//            Shaft.sSettings.setFullscreenLayout(isChecked);
-//            Local.setSettings(Shaft.sSettings);
-//        });
-    }
-
-    private void animate(LinearLayout linearLayout) {
-        SpringChain springChain = SpringChain.create(40, 8, 60, 10);
-
-        int childCount = linearLayout.getChildCount();
-        for (int i = 0; i < childCount; i++) {
-            final View view = linearLayout.getChildAt(i);
-
-            final int position = i;
-            springChain.addSpring(new SimpleSpringListener() {
-                @Override
-                public void onSpringUpdate(Spring spring) {
-                    view.setTranslationX((float) spring.getCurrentValue());
-                    if (position == 0) {
-                        Common.showLog(className + (float) spring.getCurrentValue());
-                    }
-                }
-            });
-        }
-
-        List<Spring> springs = springChain.getAllSprings();
-        for (int i = 0; i < springs.size(); i++) {
-            springs.get(i).setCurrentValue(400);
-        }
-        springChain.setControlSpringIndex(0).getControlSpring().setEndValue(0);
-    }
-
-
-    @Override
-    public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == illustPath_CODE && resultCode == Activity.RESULT_OK) {
-            List<Uri> files = Utils.getSelectedFilesFromResult(data);
-            for (Uri uri : files) {
-                File file = Utils.getFileForUri(uri);
-                String path = file.getPath();
-                if (path.startsWith("/storage/emulated/0/")) {
-                    Shaft.sSettings.setIllustPath(path);
-                    Local.setSettings(Shaft.sSettings);
-                    baseBind.illustPath.setText(path);
-                } else {
-                    Common.showToast(getString(R.string.select_inner_storage));
-                }
-            }
-            return;
-        }
-
-
-        if (requestCode == gifResultPath_CODE && resultCode == Activity.RESULT_OK) {
-            List<Uri> files = Utils.getSelectedFilesFromResult(data);
-            for (Uri uri : files) {
-                File file = Utils.getFileForUri(uri);
-                String path = file.getPath();
-                if (path.startsWith("/storage/emulated/0/")) {
-                    Shaft.sSettings.setGifResultPath(path);
-                    Local.setSettings(Shaft.sSettings);
-                    baseBind.gifResult.setText(path);
-                } else {
-                    Common.showToast(getString(R.string.select_inner_storage));
-                }
-            }
-            return;
-        }
     }
 
     @Override
-    public void onDestroyView() {
-        if (shouldRefreshFragmentRight != Shaft.sSettings.isDoubleStaggerData()) {
-            Channel channel = new Channel();
-            channel.setReceiver("FragmentRight");
-            EventBus.getDefault().post(channel);
-        }
+    public SmartRefreshLayout getSmartRefreshLayout() {
+        return baseBind.refreshLayout;
+    }
 
-        super.onDestroyView();
+    private void setOrderName() {
+        final int index = Shaft.sSettings.getBottomBarOrder();
+        String[] ORDER_NAME = new String[]{
+                getString(R.string.string_343),
+                getString(R.string.string_344),
+                getString(R.string.string_345),
+                getString(R.string.string_346),
+                getString(R.string.string_347),
+                getString(R.string.string_348),
+        };
+        baseBind.orderSelect.setText(ORDER_NAME[index]);
+    }
+
+    private void setThemeName() {
+        final int index = Shaft.sSettings.getThemeIndex();
+        baseBind.colorSelect.setText(FragmentColors.COLOR_NAMES[index]);
     }
 }

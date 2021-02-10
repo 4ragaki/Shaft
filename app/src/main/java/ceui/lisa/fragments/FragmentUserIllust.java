@@ -1,19 +1,23 @@
 package ceui.lisa.fragments;
 
 import android.os.Bundle;
+import android.view.MenuItem;
 
+import androidx.appcompat.widget.Toolbar;
+
+import ceui.lisa.R;
 import ceui.lisa.adapters.BaseAdapter;
 import ceui.lisa.adapters.IAdapter;
 import ceui.lisa.core.RemoteRepo;
+import ceui.lisa.database.AppDatabase;
 import ceui.lisa.databinding.FragmentBaseListBinding;
 import ceui.lisa.databinding.RecyIllustStaggerBinding;
-import ceui.lisa.http.Retro;
+import ceui.lisa.feature.FeatureEntity;
 import ceui.lisa.model.ListIllust;
 import ceui.lisa.models.IllustsBean;
+import ceui.lisa.repo.UserIllustRepo;
+import ceui.lisa.utils.Common;
 import ceui.lisa.utils.Params;
-import io.reactivex.Observable;
-
-import static ceui.lisa.activities.Shaft.sUserModel;
 
 /**
  * 某人創作的插畫
@@ -22,10 +26,6 @@ public class FragmentUserIllust extends NetListFragment<FragmentBaseListBinding,
 
     private int userID;
     private boolean showToolbar = false;
-
-    public static FragmentUserIllust newInstance(int userID) {
-        return newInstance(userID, false);
-    }
 
     public static FragmentUserIllust newInstance(int userID, boolean paramShowToolbar) {
         Bundle args = new Bundle();
@@ -44,24 +44,36 @@ public class FragmentUserIllust extends NetListFragment<FragmentBaseListBinding,
 
     @Override
     public RemoteRepo<ListIllust> repository() {
-        return new RemoteRepo<ListIllust>() {
-            @Override
-            public Observable<ListIllust> initApi() {
-                return Retro.getAppApi().getUserSubmitIllust(
-                        sUserModel.getResponse().getAccess_token(), userID, "illust");
-            }
-
-            @Override
-            public Observable<ListIllust> initNextApi() {
-                return Retro.getAppApi().getNextIllust(
-                        sUserModel.getResponse().getAccess_token(), mModel.getNextUrl());
-            }
-        };
+        return new UserIllustRepo(userID);
     }
 
     @Override
     public BaseAdapter<IllustsBean, RecyIllustStaggerBinding> adapter() {
         return new IAdapter(allItems, mContext);
+    }
+
+    @Override
+    public void initView() {
+        super.initView();
+        baseBind.toolbar.inflateMenu(R.menu.local_save);
+        baseBind.toolbar.setOnMenuItemClickListener(new Toolbar.OnMenuItemClickListener() {
+            @Override
+            public boolean onMenuItemClick(MenuItem item) {
+                if (item.getItemId() == R.id.action_bookmark) {
+                    FeatureEntity entity = new FeatureEntity();
+                    entity.setUuid(userID + "插画作品");
+                    entity.setShowToolbar(showToolbar);
+                    entity.setDataType("插画作品");
+                    entity.setIllustJson(Common.cutToJson(allItems));
+                    entity.setUserID(userID);
+                    entity.setDateTime(System.currentTimeMillis());
+                    AppDatabase.getAppDatabase(mContext).downloadDao().insertFeature(entity);
+                    Common.showToast("已收藏到精华");
+                    return true;
+                }
+                return false;
+            }
+        });
     }
 
     @Override
@@ -72,7 +84,7 @@ public class FragmentUserIllust extends NetListFragment<FragmentBaseListBinding,
     @Override
     public String getToolbarTitle() {
         if (showToolbar) {
-            return "插画作品";
+            return getString(R.string.string_246);
         } else {
             return super.getToolbarTitle();
         }

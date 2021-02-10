@@ -1,17 +1,16 @@
 package ceui.lisa.fragments;
 
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.view.View;
 
-import com.bumptech.glide.Glide;
-
 import ceui.lisa.R;
-import ceui.lisa.databinding.FragmentImageDetailBinding;
+import ceui.lisa.databinding.FragmentImageDetailLocalBinding;
 import ceui.lisa.utils.Params;
+import xyz.zpayh.hdimage.OnBitmapLoadListener;
+import xyz.zpayh.hdimage.state.ScaleType;
 
-import static com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions.withCrossFade;
-
-public class FragmentLocalImageDetail extends BaseFragment<FragmentImageDetailBinding> {
+public class FragmentLocalImageDetail extends BaseFragment<FragmentImageDetailLocalBinding> {
 
     private String filePath;
 
@@ -30,15 +29,16 @@ public class FragmentLocalImageDetail extends BaseFragment<FragmentImageDetailBi
 
     @Override
     public void initLayout() {
-        mLayoutID = R.layout.fragment_image_detail;
+        mLayoutID = R.layout.fragment_image_detail_local;
     }
 
     @Override
-    public void initView(View view) {
-        Glide.with(mContext)
-                .load(filePath)
-                .transition(withCrossFade())
-                .into(baseBind.illustImage);
-        baseBind.progress.setVisibility(View.INVISIBLE);
+    public void initView() {
+        if (!TextUtils.isEmpty(filePath) && filePath.contains(".zip")) {
+            baseBind.illustImage.setScaleType(ScaleType.CENTER_CROP);
+            baseBind.illustImage.setImageURI("res:///" + R.mipmap.zip);
+        } else {
+            baseBind.illustImage.setImageURI(filePath);
+        }
     }
 }

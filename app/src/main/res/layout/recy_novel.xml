@@ -18,18 +18,19 @@
             android:layout_height="wrap_content">
 
 
-            <ImageView
+            <com.makeramen.roundedimageview.RoundedImageView
                 android:layout_width="90dp"
                 android:id="@+id/cover"
                 android:scaleType="centerCrop"
-                android:background="@color/light_bg"
+                app:riv_border_width="0dp"
+                app:riv_corner_radius="@dimen/eight_dp"
                 android:layout_marginTop="@dimen/eight_dp"
                 android:layout_marginEnd="@dimen/eight_dp"
                 android:layout_alignParentEnd="true"
                 android:layout_marginBottom="@dimen/eight_dp"
                 android:layout_height="120dp">
 
-            </ImageView>
+            </com.makeramen.roundedimageview.RoundedImageView>
 
 
             <RelativeLayout
@@ -41,7 +42,7 @@
 
                 <ImageView
                     android:layout_width="2dp"
-                    android:background="@color/colorPrimary"
+                    android:background="?attr/colorPrimary"
                     android:layout_alignTop="@+id/title"
                     android:layout_alignBottom="@+id/title"
                     android:layout_height="wrap_content">
@@ -71,7 +72,7 @@
                 android:layout_below="@+id/top_rela"
                 android:layout_marginEnd="@dimen/eight_dp"
                 android:maxLines="2"
-                android:textColor="@color/colorPrimary"
+                android:textColor="?attr/colorPrimary"
                 android:layout_toStartOf="@+id/cover"
                 android:textSize="13sp"
                 android:layout_marginStart="@dimen/eight_dp"
@@ -123,7 +124,6 @@
                 android:layout_marginBottom="5dp"
                 android:shadowRadius="1.5"
                 android:layout_marginTop="14dp"
-                android:text="作者名字"
                 android:layout_marginEnd="@dimen/eight_dp"
                 android:textColor="@android:color/white"
                 android:textStyle="bold"
@@ -134,13 +134,13 @@
             <Button
                 style="@style/Widget.AppCompat.Button.Borderless"
                 android:layout_width="wrap_content"
-                android:textColor="@color/colorPrimary"
+                android:textColor="?attr/colorPrimary"
                 android:layout_height="wrap_content"
                 android:id="@+id/like"
                 android:layout_marginEnd="@dimen/four_dp"
                 android:layout_alignBaseline="@+id/author"
                 android:layout_toStartOf="@+id/cover"
-                android:text="收藏">
+                android:text="@string/string_122">
 
 
             </Button>
@@ -151,3 +151,4 @@
 
     </androidx.cardview.widget.CardView>
 </layout>
+

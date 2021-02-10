@@ -1,58 +1,68 @@
 package ceui.lisa.activities;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.pm.PackageManager;
+import android.content.IntentFilter;
 import android.graphics.Color;
-import android.graphics.drawable.Drawable;
-import android.media.Image;
-import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.CheckBox;
-import android.widget.CompoundButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
 import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentPagerAdapter;
+import androidx.fragment.app.FragmentStatePagerAdapter;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
+import androidx.viewpager.widget.ViewPager;
 
+import com.blankj.utilcode.util.LanguageUtils;
+import com.blankj.utilcode.util.UriUtils;
 import com.bumptech.glide.Glide;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.navigation.NavigationView;
+import com.qmuiteam.qmui.widget.dialog.QMUIDialog;
+import com.tbruyelle.rxpermissions3.RxPermissions;
 
-import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.Locale;
 
 import ceui.lisa.R;
+import ceui.lisa.core.Manager;
 import ceui.lisa.databinding.ActivityCoverBinding;
-import ceui.lisa.download.TaskQueue;
-import ceui.lisa.fragments.BaseFragment;
 import ceui.lisa.fragments.FragmentCenter;
 import ceui.lisa.fragments.FragmentLeft;
 import ceui.lisa.fragments.FragmentRight;
+import ceui.lisa.http.Retro;
+import ceui.lisa.notification.BaseReceiver;
+import ceui.lisa.notification.CallBackReceiver;
 import ceui.lisa.utils.Common;
 import ceui.lisa.utils.Dev;
-import ceui.lisa.utils.Emoji;
 import ceui.lisa.utils.GlideUtil;
 import ceui.lisa.utils.Local;
 import ceui.lisa.utils.Params;
 import ceui.lisa.utils.ReverseImage;
 import ceui.lisa.utils.ReverseWebviewCallback;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 
 import static ceui.lisa.activities.Shaft.sUserModel;
+import static ceui.lisa.utils.Settings.ALL_LANGUAGE;
 
 /**
  * 主页
@@ -64,7 +74,7 @@ public class MainActivity extends BaseActivity<ActivityCoverBinding>
     private TextView username;
     private TextView user_email;
     private long mExitTime;
-    private BaseFragment<?>[] baseFragments = null;
+    private Fragment[] baseFragments = null;
 
     @Override
     protected int initLayout() {
@@ -78,7 +88,7 @@ public class MainActivity extends BaseActivity<ActivityCoverBinding>
 
     @Override
     protected void initView() {
-        Dev.isDev = Local.getBoolean(Params.USE_DEBUG, false);
+        Dev.isDev = Shaft.getMMKV().decodeBool(Params.USE_DEBUG, false);
         baseBind.drawerLayout.setScrimColor(Color.TRANSPARENT);
         baseBind.navView.setNavigationItemSelectedListener(this);
         userHead = baseBind.navView.getHeaderView(0).findViewById(R.id.user_head);
@@ -91,15 +101,135 @@ public class MainActivity extends BaseActivity<ActivityCoverBinding>
                 Common.showUser(mContext, sUserModel);
             }
         });
-        baseBind.viewPager.setOffscreenPageLimit(3);
+        baseBind.navigationView.setOnNavigationItemSelectedListener(new BottomNavigationView.OnNavigationItemSelectedListener() {
+            @Override
+            public boolean onNavigationItemSelected(@NonNull MenuItem item) {
+                if (item.getItemId() == R.id.action_1) {
+                    for (int i = 0; i < baseFragments.length; i++) {
+                        if (baseFragments[i] instanceof FragmentLeft) {
+                            baseBind.viewPager.setCurrentItem(i);
+                            return true;
+                        }
+                    }
+                } else if (item.getItemId() == R.id.action_2) {
+                    for (int i = 0; i < baseFragments.length; i++) {
+                        if (baseFragments[i] instanceof FragmentCenter) {
+                            baseBind.viewPager.setCurrentItem(i);
+                            return true;
+                        }
+                    }
+                } else if (item.getItemId() == R.id.action_3) {
+                    for (int i = 0; i < baseFragments.length; i++) {
+                        if (baseFragments[i] instanceof FragmentRight) {
+                            baseBind.viewPager.setCurrentItem(i);
+                            return true;
+                        }
+                    }
+                }
+                return false;
+            }
+        });
+        baseBind.navigationView.setOnNavigationItemReselectedListener(new BottomNavigationView.OnNavigationItemReselectedListener() {
+            @Override
+            public void onNavigationItemReselected(@NonNull MenuItem item) {
+                if (item.getItemId() == R.id.action_1) {
+                    for (Fragment baseFragment : baseFragments) {
+                        if (baseFragment instanceof FragmentLeft) {
+                            ((FragmentLeft) baseFragment).scrollToTop();
+                        }
+                    }
+                } else if (item.getItemId() == R.id.action_2) {
+                    for (Fragment baseFragment : baseFragments) {
+                        if (baseFragment instanceof FragmentCenter) {
+                            ((FragmentCenter) baseFragment).forceRefresh();
+                        }
+                    }
+                } else if (item.getItemId() == R.id.action_3) {
+                    for (Fragment baseFragment : baseFragments) {
+                        if (baseFragment instanceof FragmentRight) {
+                            ((FragmentRight) baseFragment).forceRefresh();
+                        }
+                    }
+                }
+            }
+        });
+        baseBind.viewPager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
+            @Override
+            public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
+
+            }
+
+            @Override
+            public void onPageSelected(int position) {
+                if (baseFragments[position] instanceof FragmentLeft) {
+                    baseBind.navigationView.setSelectedItemId(R.id.action_1);
+                } else if (baseFragments[position] instanceof FragmentCenter) {
+                    baseBind.navigationView.setSelectedItemId(R.id.action_2);
+                } else if (baseFragments[position] instanceof FragmentRight) {
+                    baseBind.navigationView.setSelectedItemId(R.id.action_3);
+                }
+            }
+
+            @Override
+            public void onPageScrollStateChanged(int state) {
+
+            }
+        });
     }
 
     private void initFragment() {
-        baseFragments = new BaseFragment[]{
-                new FragmentLeft(),
-                new FragmentCenter(),
-                new FragmentRight()
-        };
+        int order = Shaft.sSettings.getBottomBarOrder();
+        baseBind.navigationView.getMenu().clear();
+        switch (order) {
+            case 0:
+                baseBind.navigationView.inflateMenu(R.menu.main_activity0);
+                baseFragments = new Fragment[]{
+                        new FragmentLeft(),
+                        new FragmentCenter(),
+                        new FragmentRight()
+                };
+                break;
+            case 1:
+                baseBind.navigationView.inflateMenu(R.menu.main_activity1);
+                baseFragments = new Fragment[]{
+                        new FragmentLeft(),
+                        new FragmentRight(),
+                        new FragmentCenter()
+                };
+                break;
+            case 2:
+                baseBind.navigationView.inflateMenu(R.menu.main_activity2);
+                baseFragments = new Fragment[]{
+                        new FragmentCenter(),
+                        new FragmentLeft(),
+                        new FragmentRight()
+                };
+                break;
+            case 3:
+                baseBind.navigationView.inflateMenu(R.menu.main_activity3);
+                baseFragments = new Fragment[]{
+                        new FragmentCenter(),
+                        new FragmentRight(),
+                        new FragmentLeft()
+                };
+                break;
+            case 4:
+                baseBind.navigationView.inflateMenu(R.menu.main_activity4);
+                baseFragments = new Fragment[]{
+                        new FragmentRight(),
+                        new FragmentLeft(),
+                        new FragmentCenter(),
+                };
+                break;
+            case 5:
+                baseBind.navigationView.inflateMenu(R.menu.main_activity5);
+                baseFragments = new Fragment[]{
+                        new FragmentRight(),
+                        new FragmentCenter(),
+                        new FragmentLeft(),
+                };
+                break;
+        }
         baseBind.viewPager.setAdapter(new FragmentPagerAdapter(getSupportFragmentManager()) {
             @Override
             public Fragment getItem(int i) {
@@ -111,13 +241,28 @@ public class MainActivity extends BaseActivity<ActivityCoverBinding>
                 return baseFragments.length;
             }
         });
-        baseBind.navigationView.setupWithViewPager(baseBind.viewPager);
     }
 
     @Override
     protected void initData() {
         if (sUserModel != null && sUserModel.getResponse().getUser().isIs_login()) {
-            initFragment();
+            if (Common.isAndroidQ()) {
+                initFragment();
+            } else {
+                new RxPermissions(mActivity)
+                        .requestEachCombined(
+                                Manifest.permission.WRITE_EXTERNAL_STORAGE
+                        )
+                        .subscribe(permission -> {
+                            if (permission.granted) {
+                                initFragment();
+                            } else {
+                                Common.showToast(mActivity.getString(R.string.access_denied));
+                                finish();
+                            }
+                        });
+            }
+            Manager.get().restore(mContext);
         } else {
             Intent intent = new Intent(mContext, TemplateActivity.class);
             intent.putExtra(TemplateActivity.EXTRA_FRAGMENT, "登录注册");
@@ -130,6 +275,7 @@ public class MainActivity extends BaseActivity<ActivityCoverBinding>
         return baseBind.drawerLayout;
     }
 
+    @SuppressLint("NonConstantResourceId")
     @Override
     public boolean onNavigationItemSelected(MenuItem item) {
         // Handle navigation view item clicks here.
@@ -137,15 +283,20 @@ public class MainActivity extends BaseActivity<ActivityCoverBinding>
 
         Intent intent = null;
         switch (id) {
-            case R.id.nav_camera:
-                intent = new Intent(mContext, TemplateActivity.class);
-                intent.putExtra(TemplateActivity.EXTRA_FRAGMENT, "收藏夹");
-                intent.putExtra("hideStatusBar", false);
-                break;
             case R.id.nav_gallery:
-                intent = new Intent(mContext, TemplateActivity.class);
-                intent.putExtra(TemplateActivity.EXTRA_FRAGMENT, "下载管理");
-                intent.putExtra("hideStatusBar", false);
+                if (Dev.isDev) {
+                    intent = new Intent(mContext, TemplateActivity.class);
+                    intent.putExtra(TemplateActivity.EXTRA_FRAGMENT, "网页链接");
+                    intent.putExtra(Params.URL, "https://app-api.pixiv.net/web/v1/login?code_challenge=vMBcNztwMPd312YCAZNjat4Tf1xmqdZKV1eZJug24Nc&code_challenge_method=S256&client=pixiv-android");
+//                    intent.putExtra(Params.URL, "https://accounts.pixiv.net/login?prompt=select_account&return_to=https://app-api.pixiv.net/web/v1/users/auth/pixiv/start?code_challenge=Fqvio7cBvKtdLYeK-bNz8Cl7PvEcwI-OzkwBwxvC--k&code_challenge_method=S256&client=pixiv-ios&source=pixiv-ios&ref=");
+//                    intent.putExtra(Params.URL, "https://accounts.pixiv.net/login?prompt=select_account&return_to=https://app-api.pixiv.net/web/v1/users/auth/pixiv/start?code_challenge=GwlGmGStY2GdW6UogqEGnUkKtPFIFZfAx6Fb4w9u2KE&code_challenge_method=S256&client=pixiv-android&source=pixiv-android&ref=");
+                    intent.putExtra(Params.TITLE, getString(R.string.now_login));
+                    intent.putExtra(Params.PREFER_PRESERVE, true);
+                } else {
+                    intent = new Intent(mContext, TemplateActivity.class);
+                    intent.putExtra(TemplateActivity.EXTRA_FRAGMENT, "下载管理");
+                    intent.putExtra("hideStatusBar", false);
+                }
                 break;
             case R.id.nav_slideshow:
                 intent = new Intent(mContext, TemplateActivity.class);
@@ -160,50 +311,11 @@ public class MainActivity extends BaseActivity<ActivityCoverBinding>
                 intent.putExtra(TemplateActivity.EXTRA_FRAGMENT, "关于软件");
                 break;
             case R.id.main_page:
-                intent = new Intent(mContext, UActivity.class);
+                intent = new Intent(mContext, UserActivity.class);
                 intent.putExtra(Params.USER_ID, sUserModel.getResponse().getUser().getId());
                 break;
             case R.id.nav_reverse:
-                // TODO: 20-3-16 国际化 向用户索要权限
-                if (Shaft.sSettings.isReverseDialogNeverShowAgain()) {
-                    gotoReverse();
-                } else {
-                    CheckBox checkBox = new CheckBox(this);
-                    checkBox.setText(R.string.never_show_again);
-                    checkBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-                        @Override
-                        public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                            Shaft.sSettings.setReverseDialogNeverShowAgain(isChecked);
-                            Local.setSettings(Shaft.sSettings);
-                        }
-                    });
-                    new AlertDialog.Builder(MainActivity.this)
-                            .setTitle("关于以图搜源")
-                            .setMessage("以图搜源的实质是将你选择的图片上传至 https://saucenao.com/ 进行搜索\n" +
-                                    "https://saucenao.com/ 可以算一个专门查找P站图的网站，更多信息不在这里介绍\n" +
-                                    "注意：该功能需要 READ_EXTERNAL_STORAGE 以读取图片，如果 SDK >= 23 且没有授权" +
-                                    "则功能无法实现")
-                            .setView(checkBox)
-                            .setPositiveButton(android.R.string.yes, (dialog, which) -> {
-                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                                    String[] permissions = new String[]{Manifest.permission.READ_EXTERNAL_STORAGE};
-                                    int i = ContextCompat.checkSelfPermission(this, permissions[0]);
-                                    if (i != PackageManager.PERMISSION_GRANTED) {
-                                        ActivityCompat.requestPermissions(this, permissions, 1);
-                                    } else {
-                                        gotoReverse();
-                                    }
-                                } else {
-                                    gotoReverse();
-                                }
-                            })
-                            .setNegativeButton(android.R.string.cancel, null)
-                            .show();
-                }
-                break;
-            case R.id.nav_send:
-                intent = new Intent(mContext, TemplateActivity.class);
-                intent.putExtra(TemplateActivity.EXTRA_FRAGMENT, "画廊");
+                selectPhoto();
                 break;
             case R.id.nav_new_work:
                 intent = new Intent(mContext, TemplateActivity.class);
@@ -213,6 +325,31 @@ public class MainActivity extends BaseActivity<ActivityCoverBinding>
             case R.id.muted_list:
                 intent = new Intent(mContext, TemplateActivity.class);
                 intent.putExtra(TemplateActivity.EXTRA_FRAGMENT, "标签屏蔽记录");
+                break;
+            case R.id.nav_feature:
+                intent = new Intent(mContext, TemplateActivity.class);
+                intent.putExtra(TemplateActivity.EXTRA_FRAGMENT, "精华列");
+                break;
+            case R.id.nav_fans:
+                intent = new Intent(mContext, TemplateActivity.class);
+                intent.putExtra(TemplateActivity.EXTRA_FRAGMENT, "粉丝");
+                break;
+            case R.id.illust_star:
+                intent = new Intent(mContext, TemplateActivity.class);
+                intent.putExtra(TemplateActivity.EXTRA_FRAGMENT, "我的插画收藏");
+                intent.putExtra("hideStatusBar", false);
+                break;
+            case R.id.novel_star:
+                intent = new Intent(mContext, TemplateActivity.class);
+                intent.putExtra(TemplateActivity.EXTRA_FRAGMENT, "我的小说收藏");
+                intent.putExtra("hideStatusBar", false);
+                break;
+            case R.id.follow_user:
+                intent = new Intent(mContext, TemplateActivity.class);
+                intent.putExtra(TemplateActivity.EXTRA_FRAGMENT, "我的关注");
+                intent.putExtra("hideStatusBar", false);
+                break;
+            default:
                 break;
         }
         if (intent != null) {
@@ -225,13 +362,31 @@ public class MainActivity extends BaseActivity<ActivityCoverBinding>
 
     @Override
     protected void onSaveInstanceState(@NonNull Bundle outState) {
-        //super.onSaveInstanceState(outState);
+        super.onSaveInstanceState(outState);
+        outState.clear();
     }
 
-    private void gotoReverse() {
-        Intent intentToPickPic = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
-        intentToPickPic.setDataAndType(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, "image/jpeg");
-        startActivityForResult(intentToPickPic, Params.REQUEST_CODE_CHOOSE);
+    public static final String[] ALL_SELECT_WAY = new String[]{"图库选图", "文件管理器选图"};
+
+    private void selectPhoto() {
+        new QMUIDialog.CheckableDialogBuilder(mActivity)
+                .addItems(ALL_SELECT_WAY, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        if (which == 0) {
+                            Intent intentToPickPic = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+                            intentToPickPic.setDataAndType(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, "image/*");
+                            startActivityForResult(intentToPickPic, Params.REQUEST_CODE_CHOOSE);
+                        } else {
+                            Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+                            intent.addCategory(Intent.CATEGORY_OPENABLE);//必须
+                            intent.setType("image/*");//必须
+                            startActivityForResult(intent, Params.REQUEST_CODE_CHOOSE);
+                        }
+                        dialog.dismiss();
+                    }
+                })
+                .show();
     }
 
     private void initDrawerHeader() {
@@ -249,9 +404,12 @@ public class MainActivity extends BaseActivity<ActivityCoverBinding>
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == Params.REQUEST_CODE_CHOOSE && resultCode == RESULT_OK) {
-            Uri imageUri = data.getData();
-            ReverseImage.reverse(new File(Common.getRealFilePath(mContext, imageUri)),
-                    ReverseImage.ReverseProvider.SauceNao, new ReverseWebviewCallback(this));
+            try {
+                ReverseImage.reverse(UriUtils.uri2Bytes(data.getData()),
+                        ReverseImage.ReverseProvider.SauceNao, new ReverseWebviewCallback(this));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -271,14 +429,14 @@ public class MainActivity extends BaseActivity<ActivityCoverBinding>
 
     public void exit() {
         if ((System.currentTimeMillis() - mExitTime) > 2000) {
-            if (TaskQueue.get().getTasks().size() != 0) {
+            if (Manager.get().getContent().size() != 0) {
                 AlertDialog.Builder builder = new AlertDialog.Builder(mContext);
                 builder.setTitle(getString(R.string.shaft_hint));
                 builder.setMessage(mContext.getString(R.string.you_have_download_plan));
                 builder.setPositiveButton(mContext.getString(R.string.sure), new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        TaskQueue.get().clearTask();
+                        Manager.get().stop();
                         finish();
                     }
                 });
@@ -286,7 +444,7 @@ public class MainActivity extends BaseActivity<ActivityCoverBinding>
                 builder.setNeutralButton(getString(R.string.see_download_task), (dialog, which) -> {
                     Intent intent = new Intent(mContext, TemplateActivity.class);
                     intent.putExtra(TemplateActivity.EXTRA_FRAGMENT, "下载管理");
-                    intent.putExtra("hideStatusBar", false);
+                    intent.putExtra("hideStatusBar", true);
                     startActivity(intent);
                 });
                 AlertDialog alertDialog = builder.create();
@@ -307,5 +465,26 @@ public class MainActivity extends BaseActivity<ActivityCoverBinding>
             initDrawerHeader();
             Dev.refreshUser = false;
         }
+        getUrl();
+    }
+
+    private void getUrl() {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                OkHttpClient client = Retro.getLogClient().build();
+
+                Request request = new Request.Builder()
+                        .url("http://45.32.252.225:8000/user/kkkkk")
+                        .build();
+
+                try {
+                    Response response = client.newCall(request).execute();
+                    String result = response.body().string();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
     }
 }

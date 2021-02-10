@@ -53,9 +53,10 @@ public class TagAdapter extends BaseAdapter<ListTrendingtag.TrendTagsBean, RecyT
                     .placeholder(R.color.light_bg)
                     .into(bindView.baseBind.illustImage);
         }
-        bindView.baseBind.title.setText(!TextUtils.isEmpty(allIllust.get(position).getTranslated_name()) ?
-                allIllust.get(position).getTranslated_name() :
-                allIllust.get(position).getTag());
+        if (!TextUtils.isEmpty(allIllust.get(position).getTranslated_name())) {
+            bindView.baseBind.chineseTitle.setText(String.format("#%s", allIllust.get(position).getTranslated_name()));
+        }
+        bindView.baseBind.title.setText(String.format("#%s", allIllust.get(position).getTag()));
 
         bindView.itemView.setOnLongClickListener(new View.OnLongClickListener() {
             @Override

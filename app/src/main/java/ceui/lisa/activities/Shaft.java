@@ -1,25 +1,35 @@
 package ceui.lisa.activities;
 
+import android.annotation.SuppressLint;
 import android.app.Application;
 import android.content.Context;
+import android.content.IntentFilter;
+import android.content.ServiceConnection;
 import android.content.SharedPreferences;
-
-import androidx.security.crypto.EncryptedSharedPreferences;
+import android.content.res.Configuration;
+import android.net.ConnectivityManager;
+import android.view.Gravity;
 
 import com.google.gson.Gson;
+import com.hjq.toast.ToastUtils;
 import com.scwang.smartrefresh.layout.SmartRefreshLayout;
 import com.scwang.smartrefresh.layout.footer.ClassicsFooter;
 import com.scwang.smartrefresh.layout.header.ClassicsHeader;
+import com.tencent.mmkv.MMKV;
 
+import androidx.annotation.NonNull;
 import ceui.lisa.R;
-import ceui.lisa.models.UserModel;
+import ceui.lisa.feature.HostManager;
+import ceui.lisa.feature.ToastStyle;
 import ceui.lisa.helper.ThemeHelper;
-import ceui.lisa.utils.Common;
+import ceui.lisa.models.UserModel;
+import ceui.lisa.notification.NetWorkStateReceiver;
 import ceui.lisa.utils.DensityUtil;
-import ceui.lisa.utils.Dev;
 import ceui.lisa.utils.Local;
-import ceui.lisa.utils.Params;
 import ceui.lisa.utils.Settings;
+import ceui.lisa.view.MyDeliveryHeader;
+import me.jessyan.progressmanager.ProgressManager;
+import okhttp3.OkHttpClient;
 
 import static ceui.lisa.utils.Local.LOCAL_DATA;
 
@@ -29,7 +39,9 @@ public class Shaft extends Application {
     public static Settings sSettings;
     public static Gson sGson;
     public static SharedPreferences sPreferences;
-    public static SharedPreferences sEncryptedPreferences;
+    protected NetWorkStateReceiver netWorkStateReceiver;
+    private OkHttpClient mOkHttpClient;
+    private static MMKV mmkv;
 
     /**
      * 状态栏高度，初始化
@@ -38,11 +50,11 @@ public class Shaft extends Application {
     /**
      * 全局context
      */
+    @SuppressLint("StaticFieldLeak")
     private static Context sContext = null;
 
     static {
         SmartRefreshLayout.setDefaultRefreshHeaderCreator((context, layout) -> {
-            layout.setPrimaryColorsId(R.color.colorPrimary, android.R.color.white);//全局设置主题颜色
             return new ClassicsHeader(context);//.setTimeFormat(new DynamicTimeFormat("更新于 %s"));//指定为经典Header，默认是 贝塞尔雷达Header
         });
 
@@ -65,32 +77,19 @@ public class Shaft extends Application {
 
         sPreferences = getSharedPreferences(LOCAL_DATA, Context.MODE_PRIVATE);
 
-        try {
-            sEncryptedPreferences = EncryptedSharedPreferences
-                    .create(
-                            "e_preferences",
-                            "XMyfAAFJ89drW43S",
-                            this,
-                            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-                            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
-                    );
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        final long before = System.nanoTime();
+        MMKV.initialize(this);
 
         sUserModel = Local.getUser();
 
-        Dev.isDev = Local.getBoolean(Params.USE_DEBUG, false);
-
-        final long after = System.nanoTime();
-
-        Common.showLog("一共耗时 " + (after - before));
 
         sSettings = Local.getSettings();
 
+        updateTheme();
+
         ThemeHelper.applyTheme(null, sSettings.getThemeType());
+
+
+        this.mOkHttpClient = ProgressManager.getInstance().with(new OkHttpClient.Builder()).build();
 
         //计算状态栏高度并赋值
         statusHeight = 0;
@@ -99,5 +98,91 @@ public class Shaft extends Application {
             statusHeight = sContext.getResources().getDimensionPixelSize(resourceId);
         }
         toolbarHeight = DensityUtil.dp2px(56.0f);
+
+        if (netWorkStateReceiver == null) {
+            netWorkStateReceiver = new NetWorkStateReceiver();
+        }
+
+        HostManager.get().init();
+
+        ToastUtils.init(this);
+        ToastUtils.setGravity(Gravity.BOTTOM, 0, 0);
+        ToastUtils.initStyle(new ToastStyle(this));
+
+
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(ConnectivityManager.CONNECTIVITY_ACTION);
+        registerReceiver(netWorkStateReceiver, filter);
+    }
+
+    public OkHttpClient getOkHttpClient() {
+        return mOkHttpClient;
+    }
+
+    private void updateTheme() {
+        int current = Shaft.sSettings.getThemeIndex();
+        switch (current) {
+            case 0:
+                setTheme(R.style.AppTheme_Index0);
+                break;
+            case 1:
+                setTheme(R.style.AppTheme_Index1);
+                break;
+            case 2:
+                setTheme(R.style.AppTheme_Index2);
+                break;
+            case 3:
+                setTheme(R.style.AppTheme_Index3);
+                break;
+            case 4:
+                setTheme(R.style.AppTheme_Index4);
+                break;
+            case 5:
+                setTheme(R.style.AppTheme_Index5);
+                break;
+            case 6:
+                setTheme(R.style.AppTheme_Index6);
+                break;
+            case 7:
+                setTheme(R.style.AppTheme_Index7);
+                break;
+            case 8:
+                setTheme(R.style.AppTheme_Index8);
+                break;
+            case 9:
+                setTheme(R.style.AppTheme_Index9);
+                break;
+            default:
+                setTheme(R.style.AppTheme_Default);
+                break;
+        }
+    }
+
+    @Override
+    public void unbindService(ServiceConnection conn) {
+        try {
+            super.unbindService(conn);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static MMKV getMMKV() {
+        if (mmkv == null) {
+            mmkv = MMKV.defaultMMKV();
+        }
+        return mmkv;
+    }
+
+    @Override
+    public void onConfigurationChanged(@NonNull Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        int currentNightMode = newConfig.uiMode & Configuration.UI_MODE_NIGHT_MASK;
+        switch (currentNightMode) {
+            case Configuration.UI_MODE_NIGHT_NO:
+            case Configuration.UI_MODE_NIGHT_YES:
+                MyDeliveryHeader.changeCloudColor(getContext());
+                break;
+        }
     }
 }

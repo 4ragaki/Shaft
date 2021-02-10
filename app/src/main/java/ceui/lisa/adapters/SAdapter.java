@@ -1,6 +1,7 @@
 package ceui.lisa.adapters;
 
 import android.content.Context;
+import android.text.TextUtils;
 import android.widget.CompoundButton;
 
 import java.util.List;
@@ -22,24 +23,22 @@ public class SAdapter extends BaseAdapter<TagsBean, RecySelectTagBinding> {
 
     @Override
     public void bindData(TagsBean target, ViewHolder<RecySelectTagBinding> bindView, int position) {
-        bindView.baseBind.starSize.setText(allIllust.get(position).getName());
+        String tagName = allIllust.get(position).getName();
+        String translatedTagName = allIllust.get(position).getTranslated_name();
+        String finalTagName = tagName;
+        if (!TextUtils.isEmpty(translatedTagName)) {
+            finalTagName = String.format("%s/%s", tagName, translatedTagName);
+        }
+        bindView.baseBind.starSize.setText(finalTagName);
+
         bindView.baseBind.illustCount.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if (isChecked) {
-                    allIllust.get(position).setSelected(true);
-                } else {
-                    allIllust.get(position).setSelected(false);
-                }
+                allIllust.get(position).setSelectedLocalAndRemote(isChecked);
             }
         });
-        if (allIllust.get(position).isSelected()) {
-            bindView.baseBind.illustCount.setChecked(true);
-        } else {
-            bindView.baseBind.illustCount.setChecked(false);
-        }
-        if (mOnItemClickListener != null) {
-            bindView.itemView.setOnClickListener(v -> bindView.baseBind.illustCount.performClick());
-        }
+
+        bindView.baseBind.illustCount.setChecked(allIllust.get(position).isSelectedLocalOrRemote());
+        bindView.itemView.setOnClickListener(v -> bindView.baseBind.illustCount.performClick());
     }
 }

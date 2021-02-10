@@ -1,11 +1,12 @@
 package ceui.lisa.fragments;
 
-import android.os.Bundle;
+import android.text.method.ScrollingMovementMethod;
 import android.view.View;
 import android.widget.ImageView;
+import android.widget.RelativeLayout;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.appcompat.widget.Toolbar;
 import androidx.databinding.ViewDataBinding;
 import androidx.lifecycle.ViewModelProvider;
@@ -19,12 +20,13 @@ import com.scwang.smartrefresh.layout.header.FalsifyHeader;
 import com.scwang.smartrefresh.layout.listener.OnLoadMoreListener;
 import com.scwang.smartrefresh.layout.listener.OnRefreshListener;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import ceui.lisa.R;
+import ceui.lisa.activities.Shaft;
 import ceui.lisa.adapters.BaseAdapter;
 import ceui.lisa.core.BaseRepo;
+import ceui.lisa.interfaces.FeedBack;
 import ceui.lisa.utils.DensityUtil;
 import ceui.lisa.view.LinearItemDecoration;
 import ceui.lisa.view.SpacesItemDecoration;
@@ -33,18 +35,18 @@ import jp.wasabeef.recyclerview.animators.BaseItemAnimator;
 import jp.wasabeef.recyclerview.animators.LandingAnimator;
 
 public abstract class ListFragment<Layout extends ViewDataBinding, Item>
-        extends BaseFragment<Layout> {
+        extends BaseLazyFragment<Layout> {
 
     public static final long animateDuration = 400L;
     public static final int PAGE_SIZE = 20;
     protected RecyclerView mRecyclerView;
     protected RefreshLayout mRefreshLayout;
     protected ImageView noData;
-    protected BaseAdapter mAdapter;
+    protected RelativeLayout emptyRela;
+    protected BaseAdapter<?, ? extends ViewDataBinding> mAdapter;
     protected List<Item> allItems = null;
     protected BaseModel<Item> mModel;
     protected Toolbar mToolbar;
-    protected BaseRepo mBaseRepo;
 
     @Override
     public void initLayout() {
@@ -55,22 +57,16 @@ public abstract class ListFragment<Layout extends ViewDataBinding, Item>
 
     public abstract BaseRepo repository();
 
+    public void onAdapterPrepared() {
+
+    }
+
     @Override
-    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
-        super.onActivityCreated(savedInstanceState);
-        //获取viewmodel
+    public void initModel() {
         mModel = (BaseModel<Item>) new ViewModelProvider(this).get(modelClass());
-        allItems = mModel.getContent().getValue();
-
-        //为recyclerView设置Adapter
-        mAdapter = adapter();
-        if (mAdapter != null) {
-            mRecyclerView.setAdapter(mAdapter);
-        }
-
-        //进页面主动刷新
-        if (autoRefresh() && !mModel.isLoaded()) {
-            mRefreshLayout.autoRefresh();
+        allItems = mModel.getContent();
+        if (mModel.getBaseRepo() == null) {
+            mModel.setBaseRepo(repository());
         }
     }
 
@@ -79,55 +75,113 @@ public abstract class ListFragment<Layout extends ViewDataBinding, Item>
     }
 
     @Override
-    public void initView(View view) {
+    public void initView() {
 
-        mToolbar = view.findViewById(R.id.toolbar);
+        mToolbar = rootView.findViewById(R.id.toolbar);
         if (mToolbar != null) {
             initToolbar(mToolbar);
         }
 
-        mRecyclerView = view.findViewById(R.id.recyclerView);
+        mRecyclerView = rootView.findViewById(R.id.recyclerView);
         initRecyclerView();
+        mRecyclerView.setItemAnimator(animation());
 
-
-        if (mRecyclerView.getLayoutManager() instanceof StaggeredGridLayoutManager) {
-            //do nothing
-        } else {
-            //设置item动画
-            mRecyclerView.setItemAnimator(animation());
-        }
-
-
-        mRefreshLayout = view.findViewById(R.id.refreshLayout);
-        noData = view.findViewById(R.id.no_data);
-        noData.setOnClickListener(v -> {
-            noData.setVisibility(View.INVISIBLE);
+        mRefreshLayout = rootView.findViewById(R.id.refreshLayout);
+        mRefreshLayout.setDragRate(0.8f); // 阻尼效果太小，会导致滑动距离增大，动画不跟手
+        mRefreshLayout.setHeaderTriggerRate(1.0f); // 触发刷新位置，默认为 1.0*header高度
+        mRefreshLayout.setHeaderMaxDragRate(1.5f); // 最大下拉位置
+        noData = rootView.findViewById(R.id.no_data);
+        emptyRela = rootView.findViewById(R.id.no_data_rela);
+        emptyRela.setOnClickListener(v -> {
+            emptyRela.setVisibility(View.INVISIBLE);
             mRefreshLayout.autoRefresh();
         });
-        mBaseRepo = repository();
-        mRefreshLayout.setRefreshHeader(mBaseRepo.enableRefresh() ?
-                mBaseRepo.getHeader(mContext) : new FalsifyHeader(mContext));
-        mRefreshLayout.setRefreshFooter(mBaseRepo.hasNext() ?
-                mBaseRepo.getFooter(mContext) : new FalsifyFooter(mContext));
+        mRefreshLayout.setRefreshHeader(mModel.getBaseRepo().enableRefresh() ?
+                mModel.getBaseRepo().getHeader(mContext) : new FalsifyHeader(mContext));
+        mRefreshLayout.setRefreshFooter(mModel.getBaseRepo().hasNext() ?
+                mModel.getBaseRepo().getFooter(mContext) : new FalsifyFooter(mContext));
 
         mRefreshLayout.setOnRefreshListener(new OnRefreshListener() {
             @Override
             public void onRefresh(@NonNull RefreshLayout refreshLayout) {
-                clear();
-                fresh();
+                try {
+                    if (mRecyclerView.getLayoutManager() instanceof StaggeredGridLayoutManager
+                            && mRecyclerView.getItemAnimator() == null) {
+                        mRecyclerView.setItemAnimator(animation());
+                    }
+                    clear();
+                    fresh();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
         });
         mRefreshLayout.setOnLoadMoreListener(new OnLoadMoreListener() {
             @Override
             public void onLoadMore(@NonNull RefreshLayout refreshLayout) {
-                if (mBaseRepo.hasNext()) {
-                    loadMore();
-                } else {
-                    mRefreshLayout.finishLoadMore();
-                    mRefreshLayout.setRefreshFooter(new FalsifyFooter(mContext));
+                try {
+                    if (mRecyclerView.getLayoutManager() instanceof StaggeredGridLayoutManager
+                            && mRecyclerView.getItemAnimator() != null) {
+                        mRecyclerView.setItemAnimator(null);
+                    }
+                    if (mModel.getBaseRepo().hasNext()) {
+                        loadMore();
+                    } else {
+                        mRefreshLayout.finishLoadMore();
+                        mRefreshLayout.setRefreshFooter(new FalsifyFooter(mContext));
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
             }
         });
+
+        allItems = mModel.getContent();
+        mAdapter = adapter();
+        if (mAdapter != null) {
+            mRecyclerView.setAdapter(mAdapter);
+        }
+
+        onAdapterPrepared();
+
+        if (!isLazy()) {
+            //进页面主动刷新
+            if (autoRefresh() && !mModel.isLoaded()) {
+                mRefreshLayout.autoRefresh();
+            }
+        }
+    }
+
+    @Override
+    public void lazyData() {
+        //进页面主动刷新
+        if (autoRefresh() && !mModel.isLoaded()) {
+            mRefreshLayout.autoRefresh();
+        }
+    }
+
+    public void forceRefresh() {
+        scrollToTop(() -> mRefreshLayout.autoRefresh());
+    }
+
+    public void scrollToTop(FeedBack feedBack) {
+        try {
+            mRecyclerView.smoothScrollToPosition(0);
+            mRecyclerView.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    if (feedBack != null) {
+                        feedBack.doSomething();
+                    }
+                }
+            }, animateDuration);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void scrollToTop() {
+        scrollToTop(null);
     }
 
     public abstract void fresh();
@@ -159,13 +213,12 @@ public abstract class ListFragment<Layout extends ViewDataBinding, Item>
 
     public void verticalRecyclerView() {
         mRecyclerView.setLayoutManager(new LinearLayoutManager(mContext));
-        mRecyclerView.setHasFixedSize(true);
         mRecyclerView.addItemDecoration(new LinearItemDecoration(DensityUtil.dp2px(12.0f)));
     }
 
     protected void staggerRecyclerView() {
         StaggeredGridLayoutManager manager = new StaggeredGridLayoutManager(
-                2, StaggeredGridLayoutManager.VERTICAL);
+                Shaft.sSettings.getLineCount(), StaggeredGridLayoutManager.VERTICAL);
         mRecyclerView.setLayoutManager(manager);
         mRecyclerView.addItemDecoration(new SpacesItemDecoration(
                 DensityUtil.dp2px(8.0f)));
@@ -183,16 +236,18 @@ public abstract class ListFragment<Layout extends ViewDataBinding, Item>
     public void initToolbar(Toolbar toolbar) {
         if (showToolbar()) {
             toolbar.setVisibility(View.VISIBLE);
+            TextView title = toolbar.findViewById(R.id.toolbar_title);
+            if (title != null) {
+                title.setText(getToolbarTitle());
+                title.setMovementMethod(ScrollingMovementMethod.getInstance());
+                title.setHorizontallyScrolling(true);
+            } else {
+                toolbar.setTitle(getToolbarTitle());
+            }
+            toolbar.setNavigationOnClickListener(v -> finish());
         } else {
             toolbar.setVisibility(View.GONE);
         }
-        toolbar.setTitle(getToolbarTitle());
-        toolbar.setNavigationOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                mActivity.finish();
-            }
-        });
     }
 
     public void beforeFirstLoad(List<Item> items) {
@@ -243,10 +298,7 @@ public abstract class ListFragment<Layout extends ViewDataBinding, Item>
         mRefreshLayout.autoRefresh();
     }
 
-    public List<Item> getContent() {
-        if (mModel == null) {
-            return new ArrayList<>();
-        }
-        return mModel.getContent().getValue();
+    public int getCount() {
+        return allItems == null ? 0 : allItems.size();
     }
 }

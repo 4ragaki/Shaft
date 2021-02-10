@@ -2,18 +2,16 @@ package ceui.lisa.fragments;
 
 import android.os.Bundle;
 
+import ceui.lisa.R;
 import ceui.lisa.adapters.BaseAdapter;
 import ceui.lisa.adapters.NAdapter;
 import ceui.lisa.core.RemoteRepo;
 import ceui.lisa.databinding.FragmentBaseListBinding;
 import ceui.lisa.databinding.RecyNovelBinding;
-import ceui.lisa.http.Retro;
 import ceui.lisa.model.ListNovel;
 import ceui.lisa.models.NovelBean;
+import ceui.lisa.repo.LikeNovelRepo;
 import ceui.lisa.utils.Params;
-import io.reactivex.Observable;
-
-import static ceui.lisa.activities.Shaft.sUserModel;
 
 /**
  * 某人收藏的小说
@@ -44,19 +42,7 @@ public class FragmentLikeNovel extends NetListFragment<FragmentBaseListBinding,
 
     @Override
     public RemoteRepo<ListNovel> repository() {
-        return new RemoteRepo<ListNovel>() {
-            @Override
-            public Observable<ListNovel> initApi() {
-                return Retro.getAppApi().getUserLikeNovel(sUserModel
-                        .getResponse().getAccess_token(), userID, starType);
-            }
-
-            @Override
-            public Observable<ListNovel> initNextApi() {
-                return Retro.getAppApi().getNextNovel(
-                        sUserModel.getResponse().getAccess_token(), mModel.getNextUrl());
-            }
-        };
+        return new LikeNovelRepo(userID, starType);
     }
 
     @Override
@@ -71,6 +57,6 @@ public class FragmentLikeNovel extends NetListFragment<FragmentBaseListBinding,
 
     @Override
     public String getToolbarTitle() {
-        return showToolbar ? "小说收藏" : super.getToolbarTitle();
+        return showToolbar ? getString(R.string.string_192) : super.getToolbarTitle();
     }
 }

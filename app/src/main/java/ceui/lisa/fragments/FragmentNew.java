@@ -1,23 +1,17 @@
 package ceui.lisa.fragments;
 
-import android.view.View;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentPagerAdapter;
 
+import com.blankj.utilcode.util.BarUtils;
+
 import ceui.lisa.R;
 import ceui.lisa.activities.Shaft;
 import ceui.lisa.databinding.ViewpagerWithTablayoutBinding;
-import ceui.lisa.utils.Dev;
 
 public class FragmentNew extends BaseFragment<ViewpagerWithTablayoutBinding> {
-
-    private static final String[] CHINESE_TITLES = new String[]{
-            Shaft.getContext().getString(R.string.type_illust),
-            Shaft.getContext().getString(R.string.type_manga),
-            Shaft.getContext().getString(R.string.type_novel)};
 
     @Override
     public void initLayout() {
@@ -25,33 +19,26 @@ public class FragmentNew extends BaseFragment<ViewpagerWithTablayoutBinding> {
     }
 
     @Override
-    public void initView(View view) {
+    public void initView() {
+        String[] CHINESE_TITLES = new String[]{
+                Shaft.getContext().getString(R.string.type_illust),
+                Shaft.getContext().getString(R.string.type_manga),
+                Shaft.getContext().getString(R.string.type_novel)
+        };
         baseBind.toolbar.setNavigationOnClickListener(v -> mActivity.finish());
-        baseBind.toolbar.setTitle("最新作品");
+        baseBind.toolbarTitle.setText(R.string.string_204);
         baseBind.viewPager.setAdapter(new FragmentPagerAdapter(getChildFragmentManager()) {
             @NonNull
             @Override
             public Fragment getItem(int position) {
-                if (Dev.isDev) {
-                    if (position == 0) {
-                        return new FragmentLatestNovel();
-                    } else if (position == 1) {
-                        return new Fragment();
-                    } else if (position == 2) {
-                        return new Fragment();
-                    } else {
-                        return new Fragment();
-                    }
+                if (position == 0) {
+                    return FragmentLatestWorks.newInstance("illust");
+                } else if (position == 1) {
+                    return FragmentLatestWorks.newInstance("manga");
+                } else if (position == 2) {
+                    return new FragmentLatestNovel();
                 } else {
-                    if (position == 0) {
-                        return FragmentLatestWorks.newInstance("illust");
-                    } else if (position == 1) {
-                        return FragmentLatestWorks.newInstance("manga");
-                    } else if (position == 2) {
-                        return new FragmentLatestNovel();
-                    } else {
-                        return new Fragment();
-                    }
+                    return new Fragment();
                 }
             }
 

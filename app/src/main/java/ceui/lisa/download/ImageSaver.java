@@ -1,18 +1,22 @@
 package ceui.lisa.download;
 
+import android.content.Context;
+import android.content.Intent;
+import android.graphics.BitmapFactory;
 import android.media.MediaScannerConnection;
+import android.net.Uri;
+import android.provider.MediaStore;
 
 import java.io.File;
 
 import ceui.lisa.activities.Shaft;
 import ceui.lisa.utils.Common;
-import ceui.lisa.utils.Dev;
 
 public abstract class ImageSaver {
 
-    abstract File whichFile();
+    public abstract File whichFile();
 
-    void execute() {
+    public void execute(Context context) {
         File file = whichFile();
         if (file == null) {
             return;
@@ -32,8 +36,16 @@ public abstract class ImageSaver {
         }
         MediaScannerConnection.scanFile(
                 Shaft.getContext(), path, mime, (path1, uri) -> {
+                    Common.showLog("ImageSaver path1 " + path1 + " uri " + uri);
                 }
         );
+
+
+        MediaStore.Images.Media.insertImage(context.getContentResolver(), BitmapFactory.decodeFile(file.getAbsolutePath()), file.getName(), null);
+        Intent intent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
+        Uri uri = Uri.fromFile(file);
+        intent.setData(uri);
+        context.sendBroadcast(intent);
     }
 
     /**

@@ -7,25 +7,24 @@ import android.view.View;
 import androidx.recyclerview.widget.GridLayoutManager;
 
 import ceui.lisa.activities.SearchActivity;
+import ceui.lisa.activities.TemplateActivity;
 import ceui.lisa.adapters.BaseAdapter;
 import ceui.lisa.adapters.TagAdapter;
 import ceui.lisa.core.RemoteRepo;
 import ceui.lisa.databinding.FragmentBaseListBinding;
 import ceui.lisa.databinding.RecyTagGridBinding;
-import ceui.lisa.http.Retro;
 import ceui.lisa.interfaces.OnItemClickListener;
 import ceui.lisa.model.ListTrendingtag;
-import ceui.lisa.utils.Channel;
+import ceui.lisa.repo.HotTagRepo;
 import ceui.lisa.utils.DensityUtil;
+import ceui.lisa.utils.Dev;
 import ceui.lisa.utils.Params;
 import ceui.lisa.view.TagItemDecoration;
-import io.reactivex.Observable;
 
 
 public class FragmentHotTag extends NetListFragment<FragmentBaseListBinding,
         ListTrendingtag, ListTrendingtag.TrendTagsBean> {
 
-    private boolean isLoad = false;
     private String contentType = "";
 
     public static FragmentHotTag newInstance(String type) {
@@ -61,17 +60,7 @@ public class FragmentHotTag extends NetListFragment<FragmentBaseListBinding,
 
     @Override
     public RemoteRepo<ListTrendingtag> repository() {
-        return new RemoteRepo<ListTrendingtag>() {
-            @Override
-            public Observable<ListTrendingtag> initApi() {
-                return Retro.getAppApi().getHotTags(token(), contentType);
-            }
-
-            @Override
-            public Observable<ListTrendingtag> initNextApi() {
-                return null;
-            }
-        };
+        return new HotTagRepo(contentType);
     }
 
     @Override
@@ -81,7 +70,7 @@ public class FragmentHotTag extends NetListFragment<FragmentBaseListBinding,
             public void onItemClick(View v, int position, int viewType) {
                 Intent intent = new Intent(mContext, SearchActivity.class);
                 intent.putExtra(Params.KEY_WORD, allItems.get(position).getTag());
-                intent.putExtra(Params.INDEX, Params.TYPE_ILLUST.equals(contentType) ? 0 : 1);
+                intent.putExtra(Params.INDEX, Params.TYPE_ILLUST.equals(contentType) ? 0 : 2);
                 startActivity(intent);
             }
         });
@@ -90,30 +79,5 @@ public class FragmentHotTag extends NetListFragment<FragmentBaseListBinding,
     @Override
     public boolean showToolbar() {
         return false;
-    }
-
-    @Override
-    public void setUserVisibleHint(boolean isVisibleToUser) {
-        super.setUserVisibleHint(isVisibleToUser);
-
-        if (isVisibleToUser && !isLoad) {
-            baseBind.refreshLayout.autoRefresh();
-            isLoad = true;
-        }
-    }
-
-    @Override
-    public boolean autoRefresh() {
-        return false;
-    }
-
-    @Override
-    public boolean eventBusEnable() {
-        return true;
-    }
-
-    @Override
-    public void handleEvent(Channel channel) {
-        nowRefresh();
     }
 }

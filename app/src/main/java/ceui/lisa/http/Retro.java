@@ -1,5 +1,12 @@
 package ceui.lisa.http;
 
+import android.util.Log;
+
+import com.blankj.utilcode.util.DeviceUtils;
+import com.franmontiel.persistentcookiejar.ClearableCookieJar;
+import com.franmontiel.persistentcookiejar.PersistentCookieJar;
+import com.franmontiel.persistentcookiejar.cache.SetCookieCache;
+import com.franmontiel.persistentcookiejar.persistence.SharedPrefsCookiePersistor;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.safframework.http.interceptor.LoggingInterceptor;
@@ -13,6 +20,7 @@ import ceui.lisa.activities.Shaft;
 import okhttp3.OkHttpClient;
 import okhttp3.Protocol;
 import okhttp3.Request;
+import okhttp3.logging.HttpLoggingInterceptor;
 import retrofit2.Retrofit;
 import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
 import retrofit2.converter.gson.GsonConverterFactory;
@@ -37,13 +45,14 @@ public class Retro {
 
     private static Request.Builder addHeader(Request.Builder before) {
         PixivHeaders pixivHeaders = new PixivHeaders();
-        before.addHeader("User-Agent", "PixivAndroidApp/5.0.175 (Android 6.0.1; D6653)")
-                .addHeader("Accept-Language", "zh_CN")
-                .addHeader("X-Client-Time", pixivHeaders.getXClientTime())
-                .addHeader("X-Client-Hash", pixivHeaders.getXClientHash());
-//        if (addAuth && Shaft.sUserModel != null) {
-//            before.addHeader("Authorization", Shaft.sUserModel.getResponse().getAccess_token());
-//        }
+        String osVersion = DeviceUtils.getSDKVersionName();
+        String phoneName = DeviceUtils.getModel();
+        before.addHeader("User-Agent", "PixivIOSApp/7.10.10 (iOS 14.4; iPhone12,3)")
+                .addHeader("accept-language", "zh-cn")
+                .addHeader("x-client-time", pixivHeaders.getXClientTime())
+                .addHeader("app-version", "7.10.10")
+                .addHeader("app-os", "ios")
+                .addHeader("x-client-hash", pixivHeaders.getXClientHash());
         return before;
     }
 
@@ -52,15 +61,12 @@ public class Retro {
         try {
             builder.addInterceptor(chain ->
                     chain.proceed(addHeader(chain.request().newBuilder()).build()));
-            if (!baseUrl.equals(ACCOUNT_BASE_URL)) {
-                builder.addInterceptor(new TokenInterceptor());
-            }
+            builder.addInterceptor(new TokenInterceptor());
         } catch (Exception e) {
             e.printStackTrace();
         }
         if (Shaft.sSettings.isAutoFuckChina()) {
             builder.sslSocketFactory(new RubySSLSocketFactory(), new pixivOkHttpClient());
-            //builder.dns(new CloudFlareDns(CloudFlareDNSService.Companion.invoke()));
             builder.dns(HttpDns.getInstance());
         }
         OkHttpClient client = builder.build();
@@ -71,28 +77,6 @@ public class Retro {
                 .addConverterFactory(GsonConverterFactory.create(gson))
                 .baseUrl(baseUrl)
                 .build();
-    }
-
-    public static RankTokenApi getRankApi() {
-        Gson gson = new GsonBuilder().setLenient().create();
-        Retrofit retrofit = new Retrofit.Builder()
-                .client(getLogClient().build())
-                .addConverterFactory(GsonConverterFactory.create(gson))
-                .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
-                .baseUrl(RankTokenApi.BASE_URL)
-                .build();
-        return retrofit.create(RankTokenApi.class);
-    }
-
-    public static HitoApi getHitoApi() {
-        Gson gson = new GsonBuilder().setLenient().create();
-        Retrofit retrofit = new Retrofit.Builder()
-                .client(getLogClient().build())
-                .addConverterFactory(GsonConverterFactory.create(gson))
-                .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
-                .baseUrl(HitoApi.BASE_URL)
-                .build();
-        return retrofit.create(HitoApi.class);
     }
 
     public static <T> T create(String baseUrl, final Class<T> service) {
@@ -129,7 +113,7 @@ public class Retro {
 
 
     private static class Holder {
-        private static Retrofit appRetrofit = buildRetrofit(API_BASE_URL);
+        private static final Retrofit appRetrofit = buildRetrofit(API_BASE_URL);
     }
 
     private static Retrofit get() {
@@ -137,17 +121,16 @@ public class Retro {
     }
 
     public static OkHttpClient.Builder getLogClient() {
-        return new OkHttpClient
-                .Builder()
-                .addInterceptor(
-                        new LoggingInterceptor.Builder()
-                                .loggable(true)
-                                .request()
-                                .requestTag("Request")
-                                .response()
-                                .responseTag("Response")
-                                .build()
-                )
+        HttpLoggingInterceptor loggingInterceptor = new HttpLoggingInterceptor(
+                message -> Log.i("RetroLog", message));
+        loggingInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
+        return new OkHttpClient.Builder()
+                .addInterceptor(loggingInterceptor)
+                .cookieJar(cookieJar)
                 .protocols(Collections.singletonList(Protocol.HTTP_1_1));
     }
+
+    public static ClearableCookieJar cookieJar = new PersistentCookieJar(new SetCookieCache(),
+            new SharedPrefsCookiePersistor(Shaft.getContext()));
+
 }

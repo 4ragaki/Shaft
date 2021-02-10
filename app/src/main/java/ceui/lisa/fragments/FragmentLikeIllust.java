@@ -1,25 +1,32 @@
 package ceui.lisa.fragments;
 
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Bundle;
-import android.text.TextUtils;
+import android.view.MenuItem;
 
+import androidx.appcompat.widget.Toolbar;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
-import org.greenrobot.eventbus.Subscribe;
-import org.greenrobot.eventbus.ThreadMode;
-
+import ceui.lisa.R;
+import ceui.lisa.activities.Shaft;
 import ceui.lisa.adapters.BaseAdapter;
 import ceui.lisa.adapters.IAdapter;
+import ceui.lisa.adapters.IAdapterWithStar;
 import ceui.lisa.core.RemoteRepo;
+import ceui.lisa.database.AppDatabase;
 import ceui.lisa.databinding.FragmentBaseListBinding;
 import ceui.lisa.databinding.RecyIllustStaggerBinding;
-import ceui.lisa.http.Retro;
+import ceui.lisa.feature.FeatureEntity;
 import ceui.lisa.model.ListIllust;
 import ceui.lisa.models.IllustsBean;
-import ceui.lisa.utils.Channel;
+import ceui.lisa.notification.BaseReceiver;
+import ceui.lisa.notification.FilterReceiver;
+import ceui.lisa.repo.LikeIllustRepo;
+import ceui.lisa.utils.Common;
 import ceui.lisa.utils.Params;
-import io.reactivex.Observable;
-
-import static ceui.lisa.activities.Shaft.sUserModel;
 
 /**
  * 某人收藏的插畫
@@ -27,11 +34,10 @@ import static ceui.lisa.activities.Shaft.sUserModel;
 public class FragmentLikeIllust extends NetListFragment<FragmentBaseListBinding,
         ListIllust, IllustsBean> {
 
-    public static final String TYPE_PUBLUC = "public";
-    public static final String TYPE_PRIVATE = "private";
     private int userID;
     private String starType, tag = "";
     private boolean showToolbar = false;
+    private BroadcastReceiver filterReceiver;
 
     public static FragmentLikeIllust newInstance(int userID, String starType) {
         return newInstance(userID, starType, false);
@@ -49,6 +55,31 @@ public class FragmentLikeIllust extends NetListFragment<FragmentBaseListBinding,
     }
 
     @Override
+    public void initView() {
+        super.initView();
+        baseBind.toolbar.inflateMenu(R.menu.local_save);
+        baseBind.toolbar.setOnMenuItemClickListener(new Toolbar.OnMenuItemClickListener() {
+            @Override
+            public boolean onMenuItemClick(MenuItem item) {
+                if (item.getItemId() == R.id.action_bookmark) {
+                    FeatureEntity entity = new FeatureEntity();
+                    entity.setUuid(userID + "插画/漫画收藏");
+                    entity.setShowToolbar(showToolbar);
+                    entity.setDataType("插画/漫画收藏");
+                    entity.setIllustJson(Common.cutToJson(allItems));
+                    entity.setUserID(userID);
+                    entity.setStarType(starType);
+                    entity.setDateTime(System.currentTimeMillis());
+                    AppDatabase.getAppDatabase(mContext).downloadDao().insertFeature(entity);
+                    Common.showToast("已收藏到精华");
+                    return true;
+                }
+                return false;
+            }
+        });
+    }
+
+    @Override
     public void initBundle(Bundle bundle) {
         userID = bundle.getInt(Params.USER_ID);
         starType = bundle.getString(Params.STAR_TYPE);
@@ -57,27 +88,44 @@ public class FragmentLikeIllust extends NetListFragment<FragmentBaseListBinding,
 
     @Override
     public RemoteRepo<ListIllust> repository() {
-        return new RemoteRepo<ListIllust>() {
-            @Override
-            public Observable<ListIllust> initApi() {
-                return TextUtils.isEmpty(tag) ?
-                        Retro.getAppApi().getUserLikeIllust(sUserModel
-                                .getResponse().getAccess_token(), userID, starType) :
-                        Retro.getAppApi().getUserLikeIllust(sUserModel
-                                .getResponse().getAccess_token(), userID, starType, tag);
-            }
-
-            @Override
-            public Observable<ListIllust> initNextApi() {
-                return Retro.getAppApi().getNextIllust(sUserModel.getResponse().getAccess_token(),
-                        mModel.getNextUrl());
-            }
-        };
+        return new LikeIllustRepo(userID, starType, tag);
     }
 
     @Override
     public BaseAdapter<IllustsBean, RecyIllustStaggerBinding> adapter() {
-        return new IAdapter(allItems, mContext);
+        boolean isOwnPage = Shaft.sUserModel.getResponse().getUser().getUserId() == userID;
+        return new IAdapterWithStar(allItems, mContext).setHideStarIcon(isOwnPage);
+    }
+
+    @Override
+    public void onAdapterPrepared() {
+        super.onAdapterPrepared();
+        IntentFilter intentFilter = new IntentFilter();
+        filterReceiver = new FilterReceiver(new BaseReceiver.CallBack() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                Bundle bundle = intent.getExtras();
+                if (bundle != null) {
+                    String type = bundle.getString(Params.STAR_TYPE);
+                    if (starType.equals(type)) {
+                        tag = bundle.getString(Params.CONTENT);
+                        ((LikeIllustRepo) mRemoteRepo).setTag(tag);
+                        baseBind.refreshLayout.autoRefresh();
+                    }
+                }
+            }
+        });
+        intentFilter.addAction(Params.FILTER_ILLUST);
+        LocalBroadcastManager.getInstance(mContext).registerReceiver(filterReceiver, intentFilter);
+    }
+
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        if (filterReceiver != null) {
+            LocalBroadcastManager.getInstance(mContext).unregisterReceiver(filterReceiver);
+        }
     }
 
     @Override
@@ -92,19 +140,6 @@ public class FragmentLikeIllust extends NetListFragment<FragmentBaseListBinding,
 
     @Override
     public String getToolbarTitle() {
-        return showToolbar ? "插画/漫画收藏" : super.getToolbarTitle();
-    }
-
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    public void onMessageEvent(Channel event) {
-        if (event.getReceiver().contains(starType)) {
-            tag = (String) event.getObject();
-            baseBind.refreshLayout.autoRefresh();
-        }
-    }
-
-    @Override
-    public boolean eventBusEnable() {
-        return true;
+        return showToolbar ? getString(R.string.string_164) : super.getToolbarTitle();
     }
 }

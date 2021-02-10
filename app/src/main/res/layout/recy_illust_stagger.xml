@@ -11,15 +11,14 @@
         android:layout_height="wrap_content"
         android:clickable="true"
         android:foreground="?attr/selectableItemBackground"
-        app:cardCornerRadius="@dimen/four_dp"
+        app:cardCornerRadius="@dimen/eight_dp"
         android:stateListAnimator="@animator/touch_raise"
-        android:elevation="@dimen/four_dp"
-        app:cardElevation="@dimen/four_dp">
+        app:cardElevation="0dp">
 
         <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@android:color/white"
+            android:background="@color/white_and_black"
             android:orientation="vertical">
 
 
@@ -46,7 +45,6 @@
                     android:paddingEnd="@dimen/four_dp"
                     android:layout_marginEnd="@dimen/six_dp"
                     android:paddingBottom="2dp"
-                    android:text="4P"
                     android:textColor="@color/always_white"
                     android:textSize="12sp" />
 
@@ -58,28 +56,13 @@
                     android:background="@drawable/tag_stroke"
                     android:paddingStart="@dimen/four_dp"
                     android:paddingTop="2dp"
+                    android:text="GIF"
                     android:paddingEnd="@dimen/four_dp"
                     android:paddingBottom="2dp"
-                    android:text="GIF"
                     android:textColor="@color/always_white"
                     android:textSize="12sp" />
 
             </LinearLayout>
-
-            <Button
-                android:id="@+id/hide"
-                style="@android:style/Widget.DeviceDefault.Button.Borderless.Small"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="end|bottom"
-                android:shadowColor="#FF000000"
-                android:shadowDx="1.5"
-                android:layout_centerInParent="true"
-                android:shadowDy="1.5"
-                android:visibility="invisible"
-                android:shadowRadius="1.5"
-                android:text="取消屏蔽"
-                android:textColor="@android:color/white"/>
 
             <ImageButton
                 android:layout_width="36dp"
@@ -87,10 +70,10 @@
                 android:id="@+id/like_button"
                 android:scaleType="fitCenter"
                 android:layout_alignParentEnd="true"
-                android:tint="#a4afb3"
                 android:layout_alignParentBottom="true"
                 android:src="@drawable/ic_like_illust_6"
-                android:layout_height="36dp">
+                android:layout_height="36dp"
+                app:tint="#a4afb3">
 
             </ImageButton>
 

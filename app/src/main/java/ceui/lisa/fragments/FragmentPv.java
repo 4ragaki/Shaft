@@ -1,12 +1,10 @@
 package ceui.lisa.fragments;
 
-import android.view.View;
-import android.view.ViewGroup;
-import android.widget.ImageView;
-
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentPagerAdapter;
+
+import com.blankj.utilcode.util.BarUtils;
 
 import ceui.lisa.R;
 import ceui.lisa.activities.Shaft;
@@ -14,9 +12,6 @@ import ceui.lisa.databinding.ViewpagerWithTablayoutBinding;
 
 public class FragmentPv extends BaseFragment<ViewpagerWithTablayoutBinding> {
 
-    private static final String[] CHINESE_TITLES = new String[]{
-            Shaft.getContext().getString(R.string.type_illust),
-            Shaft.getContext().getString(R.string.type_manga)};
 
     @Override
     public void initLayout() {
@@ -24,13 +19,13 @@ public class FragmentPv extends BaseFragment<ViewpagerWithTablayoutBinding> {
     }
 
     @Override
-    public void initView(View view) {
-        ImageView head = view.findViewById(R.id.head);
-        ViewGroup.LayoutParams headParams = head.getLayoutParams();
-        headParams.height = Shaft.statusHeight;
-        head.setLayoutParams(headParams);
+    public void initView() {
+        String[] CHINESE_TITLES = new String[]{
+                Shaft.getContext().getString(R.string.type_illust),
+                Shaft.getContext().getString(R.string.type_manga)
+        };
         baseBind.toolbar.setNavigationOnClickListener(v -> mActivity.finish());
-        baseBind.toolbar.setTitle("特辑");
+        baseBind.toolbarTitle.setText(R.string.string_191);
         baseBind.viewPager.setAdapter(new FragmentPagerAdapter(getChildFragmentManager(), 0) {
             @NonNull
             @Override
